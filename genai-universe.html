@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GenAI Universe — Architecture Explorer</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#030b15;--bg2:#060f1e;--surface:#0a1929;--surface2:#0e2236;
+  --border:#1a3349;--border2:#234466;--border3:#2d5580;
+  --cyan:#00d4ff;--cyan2:#00a8cc;--cyan3:rgba(0,212,255,.12);
+  --purple:#a855f7;--purple2:#7c3aed;--purple3:rgba(168,85,247,.12);
+  --orange:#f97316;--orange3:rgba(249,115,22,.12);
+  --green:#4ade80;--green3:rgba(74,222,128,.1);
+  --pink:#ec4899;--yellow:#fbbf24;--red:#f87171;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#506a84;--text4:#334d63;
+  --ff-display:'Syne',sans-serif;--ff-body:'DM Sans',sans-serif;--ff-mono:'JetBrains Mono',monospace;
+  --r4:4px;--r8:8px;--r12:12px;--r16:16px;
+}
+html{font-size:16px;height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--ff-body);height:100%;overflow:hidden;display:flex;flex-direction:column}
+/* ══ HERO ═══════════════════════════════ */
+.hero{position:relative;padding:18px 32px 14px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(3,11,21,0)0%,transparent 100%);overflow:hidden;flex-shrink:0}
+#bgCanvas{position:absolute;inset:0;width:100%;height:100%;opacity:.35;pointer-events:none}
+.hero-inner{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:24px}
+.hero-left{display:flex;align-items:center;gap:20px}
+.hero-logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--cyan),var(--purple));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.hero-text h1{font-family:var(--ff-display);font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--purple) 60%,var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.hero-text p{font-size:11px;color:var(--text3);font-family:var(--ff-mono);margin-top:2px;letter-spacing:.5px}
+.hero-stats{display:flex;gap:24px}
+.hstat{text-align:center}
+.hstat-val{font-family:var(--ff-mono);font-size:18px;font-weight:600;color:var(--cyan);line-height:1}
+.hstat-label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.hero-right{display:flex;align-items:center;gap:10px}
+.live-badge{display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--green3);border:1px solid rgba(74,222,128,.3);border-radius:20px;font-family:var(--ff-mono);font-size:10px;color:var(--green)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s ease infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.3)}}
+/* ══ CATEGORY NAV ════════════════════════ */
+.cat-nav{display:flex;gap:0;background:var(--surface);border-bottom:1px solid var(--border);padding:0 16px;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
+.cat-nav::-webkit-scrollbar{display:none}
+.cat-btn{position:relative;padding:11px 16px;background:none;border:none;color:var(--text3);font-family:var(--ff-body);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;transition:color .2s;display:flex;align-items:center;gap:6px}
+.cat-btn:hover{color:var(--text2)}
+.cat-btn.active{color:var(--cyan)}
+.cat-btn.active::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cyan),var(--purple));border-radius:2px 2px 0 0}
+.cat-emoji{font-size:14px}
+/* ══ MAIN LAYOUT ════════════════════════ */
+.main{display:grid;grid-template-columns:230px 1fr 300px;flex:1;overflow:hidden;min-height:0}
+/* ══ SIDEBAR ════════════════════════════ */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.sb-head{padding:14px 16px 10px;border-bottom:1px solid var(--border)}
+.sb-head-label{font-family:var(--ff-mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text3)}
+.sb-head-cat{font-family:var(--ff-display);font-size:15px;font-weight:700;color:var(--text);margin-top:4px}
+.sb-section{padding:8px 0}
+.sb-section-label{font-family:var(--ff-mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text4);padding:4px 16px 2px}
+.arch-item{display:flex;align-items:center;gap:10px;padding:7px 14px;cursor:pointer;transition:all .15s;border-radius:0;border-left:2px solid transparent;margin:1px 0}
+.arch-item:hover{background:var(--surface2);border-left-color:var(--border2)}
+.arch-item.active{background:rgba(0,212,255,.07);border-left-color:var(--cyan)}
+.arch-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.arch-info{flex:1;min-width:0}
+.arch-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.arch-item.active .arch-name{color:var(--cyan)}
+.arch-sub{font-family:var(--ff-mono);font-size:9px;color:var(--text3);margin-top:1px}
+.arch-tag{font-family:var(--ff-mono);font-size:8px;padding:1px 5px;border-radius:3px;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--text3);flex-shrink:0}
+.arch-tag.new{background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.25);color:var(--green)}
+.arch-tag.sota{background:rgba(249,115,22,.08);border-color:rgba(249,115,22,.25);color:var(--orange)}
+/* ══ CANVAS AREA ════════════════════════ */
+.canvas-area{position:relative;background:var(--bg);overflow:hidden;display:flex;flex-direction:column}
+.canvas-toolbar{position:absolute;top:14px;left:14px;display:flex;gap:8px;z-index:10}
+.toolbar-btn{display:flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(10,25,41,.9);border:1px solid var(--border2);border-radius:var(--r8);color:var(--text2);font-family:var(--ff-mono);font-size:10px;cursor:pointer;transition:all .2s;backdrop-filter:blur(8px)}
+.toolbar-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.toolbar-btn.active{border-color:var(--orange);color:var(--orange);background:rgba(249,115,22,.08)}
+.canvas-step{position:absolute;top:14px;right:14px;background:rgba(10,25,41,.9);border:1px solid var(--border2);border-radius:var(--r8);padding:7px 12px;font-family:var(--ff-mono);font-size:10px;color:var(--text2);backdrop-filter:blur(8px);z-index:10;min-width:120px;text-align:right}
+.step-label{color:var(--text3);font-size:9px}
+.step-name{color:var(--orange);font-size:11px;font-weight:500;margin-top:2px}
+.arch-canvas{flex:1;display:block;width:100%;min-height:0}
+.canvas-legend{position:absolute;bottom:12px;left:14px;display:flex;flex-wrap:wrap;gap:8px;z-index:10}
+.legend-item{display:flex;align-items:center;gap:5px;font-family:var(--ff-mono);font-size:9px;color:var(--text3);padding:3px 8px;background:rgba(10,25,41,.8);border-radius:4px;border:1px solid var(--border);backdrop-filter:blur(4px)}
+.legend-dot{width:7px;height:7px;border-radius:2px}
+.node-tooltip{position:absolute;background:rgba(10,25,41,.97);border:1px solid var(--border2);border-radius:var(--r12);padding:12px;max-width:220px;pointer-events:none;z-index:50;display:none;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+.tt-title{font-family:var(--ff-display);font-size:13px;font-weight:700;margin-bottom:6px}
+.tt-desc{font-size:11px;color:var(--text2);line-height:1.6}
+.tt-formula{font-family:var(--ff-mono);font-size:10px;color:var(--purple);background:rgba(168,85,247,.08);border-radius:4px;padding:4px 8px;margin-top:6px}
+/* ══ DETAIL PANEL ════════════════════════ */
+.detail-panel{background:var(--surface);border-left:1px solid var(--border);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border2) transparent;display:flex;flex-direction:column}
+.detail-panel::-webkit-scrollbar{width:3px}
+.detail-panel::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.dp-header{padding:18px 18px 14px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface)}
+.dp-cat{font-family:var(--ff-mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
+.dp-name{font-family:var(--ff-display);font-size:18px;font-weight:800;color:var(--text);line-height:1.1}
+.dp-year{font-family:var(--ff-mono);font-size:10px;color:var(--text3);margin-top:4px}
+.dp-badges{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.dp-badge{font-family:var(--ff-mono);font-size:9px;padding:2px 8px;border-radius:3px}
+.dp-body{padding:16px;flex:1}
+.dp-section{margin-bottom:20px}
+.dp-section-title{font-family:var(--ff-mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.dp-section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.dp-desc{font-size:12px;line-height:1.7;color:var(--text2)}
+.formula-block{background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.2);border-left:3px solid var(--purple);border-radius:var(--r8);padding:10px 12px;font-family:var(--ff-mono);font-size:11px;color:var(--purple);margin:6px 0;overflow-x:auto;line-height:1.6}
+.inno-list{list-style:none}
+.inno-item{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid rgba(26,51,73,.5);font-size:11px;color:var(--text2);line-height:1.5}
+.inno-item:last-child{border-bottom:none}
+.inno-icon{color:var(--cyan);flex-shrink:0;font-size:12px;margin-top:1px}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat-card{background:rgba(6,15,30,.6);border:1px solid var(--border);border-radius:var(--r8);padding:10px 12px}
+.stat-val{font-family:var(--ff-mono);font-size:16px;font-weight:600;color:var(--cyan);line-height:1}
+.stat-lbl{font-size:10px;color:var(--text3);margin-top:3px}
+.models-list{display:flex;flex-wrap:wrap;gap:5px}
+.model-chip{font-family:var(--ff-mono);font-size:9px;padding:3px 8px;border-radius:4px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text2)}
+.model-chip.highlight{background:var(--cyan3);border-color:rgba(0,212,255,.3);color:var(--cyan)}
+/* DEMO AREA */
+.demo-area{background:rgba(6,15,30,.6);border:1px solid var(--border);border-radius:var(--r8);padding:12px;margin-top:6px}
+.demo-label{font-family:var(--ff-mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+.demo-input-row{display:flex;gap:6px;margin-bottom:8px}
+.demo-input{flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:var(--r4);padding:6px 8px;color:var(--text);font-family:var(--ff-mono);font-size:10px;outline:none}
+.demo-input:focus{border-color:var(--cyan)}
+.demo-btn{padding:6px 10px;background:var(--cyan3);border:1px solid rgba(0,212,255,.3);border-radius:var(--r4);color:var(--cyan);font-family:var(--ff-mono);font-size:10px;cursor:pointer;white-space:nowrap;transition:all .2s}
+.demo-btn:hover{background:rgba(0,212,255,.2)}
+.demo-btn:disabled{opacity:.4;cursor:not-allowed}
+.demo-output{min-height:50px;font-family:var(--ff-mono);font-size:11px;line-height:1.6;color:var(--text)}
+.demo-tokens{display:flex;flex-wrap:wrap;gap:3px}
+.token{padding:2px 6px;border-radius:3px;font-family:var(--ff-mono);font-size:11px;transition:all .3s}
+.token.context{background:var(--cyan3);color:var(--cyan);border:1px solid rgba(0,212,255,.2)}
+.token.generated{background:var(--purple3);color:var(--purple);border:1px solid rgba(168,85,247,.2)}
+.token.current{background:rgba(249,115,22,.15);color:var(--orange);border:1px solid var(--orange);animation:tpulse .4s ease}
+@keyframes tpulse{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
+/* DIFFUSION DEMO */
+.diff-canvas{border-radius:var(--r8);border:1px solid var(--border)}
+.diff-steps{display:flex;gap:4px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.diff-step-dot{width:24px;height:24px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--ff-mono);font-size:8px;border:1px solid var(--border);color:var(--text3);cursor:pointer;transition:all .2s}
+.diff-step-dot.active{border-color:var(--cyan);color:var(--cyan);background:var(--cyan3)}
+.diff-step-dot.done{border-color:var(--green);color:var(--green);background:var(--green3)}
+/* ATTENTION VIZ */
+.attn-viz{overflow-x:auto}
+.attn-table{border-collapse:collapse;font-family:var(--ff-mono);font-size:8px}
+.attn-table th{padding:2px 6px;color:var(--text3);font-weight:400}
+.attn-table td{width:20px;height:20px;border-radius:2px}
+/* SCROLLBAR GLOBAL */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+/* ANIMATIONS */
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.fade-in{animation:fadeIn .3s ease forwards}
+@keyframes scanline{0%{transform:translateY(-100%)}100%{transform:translateY(200%)}}
+</style>
+</head>
+<body>
+<!-- HERO -->
+<div class="hero">
+  <canvas id="bgCanvas"></canvas>
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-logo">
+        <div class="logo-icon">🧠</div>
+        <div class="hero-text">
+          <h1>GenAI Universe</h1>
+          <p>// Interactive Architecture Explorer · v3.0</p>
+        </div>
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="hstat"><div class="hstat-val">8</div><div class="hstat-label">Categories</div></div>
+      <div class="hstat"><div class="hstat-val">32</div><div class="hstat-label">Architectures</div></div>
+      <div class="hstat"><div class="hstat-val">∞</div><div class="hstat-label">Interactive</div></div>
+    </div>
+    <div class="hero-right">
+      <div class="live-badge"><div class="live-dot"></div>Live API Demo</div>
+    </div>
+  </div>
+</div>
+<!-- CATEGORY NAV -->
+<nav class="cat-nav" id="catNav">
+  <button class="cat-btn active" data-cat="text"><span class="cat-emoji">📝</span>Text Generation</button>
+  <button class="cat-btn" data-cat="multimodal"><span class="cat-emoji">🖼️</span>Multimodal Text</button>
+  <button class="cat-btn" data-cat="omni"><span class="cat-emoji">⚡</span>Omni Models</button>
+  <button class="cat-btn" data-cat="image"><span class="cat-emoji">🎨</span>Image Generation</button>
+  <button class="cat-btn" data-cat="video"><span class="cat-emoji">🎬</span>Video Generation</button>
+  <button class="cat-btn" data-cat="audio"><span class="cat-emoji">🎵</span>Audio Generation</button>
+  <button class="cat-btn" data-cat="realtime"><span class="cat-emoji">🎤</span>Real-time Conv.</button>
+  <button class="cat-btn" data-cat="3d"><span class="cat-emoji">🌐</span>3D Generation</button>
+</nav>
+<!-- MAIN -->
+<div class="main">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sb-head">
+      <div class="sb-head-label">Architecture</div>
+      <div class="sb-head-cat" id="sbCatName">Text Generation</div>
+    </div>
+    <div id="archList"></div>
+  </aside>
+  <!-- CANVAS AREA -->
+  <div class="canvas-area">
+    <div class="canvas-toolbar">
+      <button class="toolbar-btn" id="playBtn" onclick="togglePlay()">▶ Animate</button>
+      <button class="toolbar-btn" id="resetBtn" onclick="resetAnim()">↺ Reset</button>
+    </div>
+    <div class="canvas-step" id="stepIndicator">
+      <div class="step-label">STEP</div>
+      <div class="step-name" id="stepName">Ready</div>
+    </div>
+    <canvas class="arch-canvas" id="archCanvas"></canvas>
+    <div class="canvas-legend" id="canvasLegend"></div>
+    <div class="node-tooltip" id="nodeTooltip">
+      <div class="tt-title" id="ttTitle"></div>
+      <div class="tt-desc" id="ttDesc"></div>
+      <div class="tt-formula" id="ttFormula" style="display:none"></div>
+    </div>
+  </div>
+  <!-- DETAIL PANEL -->
+  <div class="detail-panel" id="detailPanel">
+    <div class="dp-header">
+      <div class="dp-cat" id="dpCat">TEXT GENERATION</div>
+      <div class="dp-name" id="dpName">Decoder-only Transformer</div>
+      <div class="dp-year" id="dpYear">Introduced: Vaswani et al. (2017) · Popularized: OpenAI GPT (2018)</div>
+      <div class="dp-badges" id="dpBadges"></div>
+    </div>
+    <div class="dp-body" id="dpBody"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// ARCHITECTURE DATABASE
+// ══════════════════════════════════════════════════════════════
+const NODE_COLORS = {
+  input:    { fill:'rgba(0,212,255,.1)',  stroke:'#00d4ff', text:'#00d4ff',  label:'Input' },
+  embed:    { fill:'rgba(0,175,200,.1)',  stroke:'#00afc8', text:'#22d3ee',  label:'Embedding' },
+  attention:{ fill:'rgba(168,85,247,.1)',stroke:'#a855f7', text:'#a855f7',  label:'Attention' },
+  ffn:      { fill:'rgba(249,115,22,.1)', stroke:'#f97316', text:'#f97316',  label:'FFN' },
+  norm:     { fill:'rgba(251,191,36,.08)',stroke:'#fbbf24', text:'#fbbf24',  label:'Norm' },
+  output:   { fill:'rgba(74,222,128,.1)', stroke:'#4ade80', text:'#4ade80',  label:'Output' },
+  special:  { fill:'rgba(248,113,113,.1)',stroke:'#f87171', text:'#f87171',  label:'Special' },
+  codec:    { fill:'rgba(34,211,238,.1)', stroke:'#22d3ee', text:'#22d3ee',  label:'Codec' },
+  latent:   { fill:'rgba(232,121,249,.1)',stroke:'#e879f9', text:'#e879f9',  label:'Latent' },
+  block:    { fill:'rgba(14,34,54,.8)',   stroke:'#234466', text:'#94a3b8',  label:'Block' },
+  pool:     { fill:'rgba(45,85,128,.15)', stroke:'#2d5580', text:'#7aa4c7',  label:'Pool' },
+  merge:    { fill:'rgba(99,179,237,.1)', stroke:'#63b3ed', text:'#63b3ed',  label:'Merge' },
+};
+
+const ARCHS = {
+  // ── TEXT GENERATION ─────────────────────────────────────────
+  'gpt': {
+    id:'gpt', name:'Decoder-only Transformer', short:'GPT / LLaMA', cat:'text',
+    year:'Vaswani et al. 2017 · GPT 2018', badge:'Autoregressive',
+    desc:`The dominant architecture for large language models. Uses stacked transformer decoder blocks with causal self-attention, ensuring each token can only attend to previous tokens. This enables autoregressive generation: predicting the next token given all preceding tokens. Residual connections and layer normalization stabilize training at scale.`,
+    formula:'Attn(Q,K,V) = softmax(QKᵀ/√dₖ)V\nP(xₜ|x₁…xₜ₋₁) = softmax(WₒLN(x+Attn+FFN))',
+    innovations:['Causal (masked) self-attention prevents future leakage','Multi-head attention captures diverse relationships','Pre-norm or post-norm layer normalization','Rotary (RoPE) or ALiBi positional embeddings','GQA (grouped query attention) reduces KV cache','SwiGLU/GeGLU activation improves FFN expressivity'],
+    stats:{params:'7B–405B',layers:'32–128',heads:'32–128',ctx:'8K–1M+'},
+    models:['GPT-4o','LLaMA 3','Claude 3.5','Gemini 1.5','Qwen2','Mistral','DeepSeek V3'],
+    highlight:'GPT-4o',
+    steps:['Input Tokenization','Token + Positional Embedding','Layer Norm','Multi-Head Self-Attention','Residual Add','Layer Norm 2','Feed-Forward Network','Residual Add','Linear + Softmax','Next Token Sample'],
+    nodes:[
+      {id:'inp',  label:'Input\nTokens',    type:'input',    x:18,  y:200, w:90, h:50, desc:'Raw text tokenized by BPE/SentencePiece into integer IDs.', formula:'x₀ = token_ids ∈ ℤⁿ'},
+      {id:'emb',  label:'Embedding\n+PosEnc',type:'embed',   x:130, y:200, w:100,h:50, desc:'Each token ID mapped to a dense vector; positional info added via sinusoidal or learned/RoPE encoding.', formula:'e = WₑxₒSTokens + PE(pos)'},
+      {id:'ln1',  label:'LayerNorm',         type:'norm',    x:260, y:145, w:90, h:36, desc:'Pre-norm: normalizes residual stream before attention.', formula:'LN(x)=(x−μ)/σ · γ+β'},
+      {id:'mha',  label:'Multi-Head\nSelf-Attention', type:'attention', x:255, y:192, w:100,h:62, desc:'Each token queries all previous tokens. Multiple heads capture different relationship types.', formula:'MHA(x) = Concat(h₁…hₙ)Wₒ'},
+      {id:'add1', label:'Residual\nAdd',     type:'merge',   x:260, y:272, w:90, h:36, desc:'Residual shortcut: output = x + Attn(LN(x)). Prevents gradient vanishing.'},
+      {id:'ln2',  label:'LayerNorm',         type:'norm',    x:260, y:320, w:90, h:36, desc:'Second layer norm before feed-forward network.'},
+      {id:'ffn',  label:'Feed-Forward\nNetwork',type:'ffn', x:255, y:367, w:100,h:62, desc:'Position-wise MLP with expansion factor ~4×. Often uses SwiGLU/GeGLU activation.', formula:'FFN(x) = (σ(xW₁)⊗xW₃)W₂'},
+      {id:'add2', label:'Residual\nAdd',     type:'merge',   x:260, y:445, w:90, h:36, desc:'Second residual add. Stack of N such blocks.'},
+      {id:'lmh',  label:'LM Head\n(Linear)', type:'output',  x:400, y:280, w:100,h:50, desc:'Unembedding matrix projects final hidden state to vocabulary logits.', formula:'logits = Wᵤ · LN(hₙ)'},
+      {id:'sfmx', label:'Softmax\nSample',   type:'output',  x:530, y:280, w:100,h:50, desc:'Temperature-scaled softmax gives probability over vocabulary. Token sampled via top-p or greedy.', formula:'p(t) = softmax(logits/T)'},
+      {id:'out',  label:'Next\nToken',       type:'input',   x:660, y:280, w:90, h:50, desc:'Sampled token is appended to context; process repeats autoregressively.'},
+    ],
+    conns:[
+      {f:'inp', t:'emb'}, {f:'emb', t:'ln1'}, {f:'ln1', t:'mha'}, {f:'mha', t:'add1'},
+      {f:'add1',t:'ln2'}, {f:'ln2', t:'ffn'}, {f:'ffn', t:'add2'}, {f:'add2',t:'lmh'},
+      {f:'lmh', t:'sfmx'}, {f:'sfmx',t:'out'},
+      {f:'emb', t:'add1', label:'residual', dash:true},
+      {f:'add1',t:'add2', label:'residual', dash:true},
+    ],
+    demo:'text',
+    demoPrompt:'The transformer architecture',
+  },
+
+  'enc-dec': {
+    id:'enc-dec', name:'Encoder-Decoder Transformer', short:'T5 / BART', cat:'text',
+    year:'Vaswani et al. 2017 · T5: Raffel et al. 2019',
+    desc:`Encoder-decoder (seq2seq) architecture. The encoder reads the full input bidirectionally and produces contextualized representations. The decoder then generates output tokens autoregressively, using cross-attention to attend to encoder outputs at each step. Ideal for tasks requiring full input understanding before generation (translation, summarization).`,
+    formula:'Encoder: H = BERT-style(x)\nDecoder: yₜ = Attn(yₜ, H) → softmax',
+    innovations:['Bidirectional encoder — full context','Cross-attention: decoder attends to all encoder states','Separate encoder/decoder parameter budgets','Span corruption pre-training (T5)','Copy mechanism for extractive tasks','Encoder handles understanding; decoder handles generation'],
+    stats:{params:'250M–11B',layers:'12–24',heads:'12–16',ctx:'512–8K'},
+    models:['T5','BART','mT5','FLAN-T5','PaLM-2 (hybrid)','UL2'],
+    steps:['Encode Source','Source Self-Attention','Encoder Output','Target Tokens','Target Self-Attention','Cross-Attention','FFN Decode','Output Token'],
+    nodes:[
+      {id:'src', label:'Source\nTokens', type:'input', x:30,y:120,w:90,h:48},
+      {id:'enc_emb',label:'Encoder\nEmbedding',type:'embed',x:150,y:120,w:100,h:48},
+      {id:'enc_sa',label:'Encoder\nSelf-Attention',type:'attention',x:280,y:100,w:110,h:52},
+      {id:'enc_ffn',label:'Encoder\nFFN',type:'ffn',x:280,y:165,w:110,h:42},
+      {id:'enc_out',label:'Encoder\nOutput H',type:'latent',x:420,y:125,w:100,h:48},
+      {id:'tgt',label:'Target\nTokens',type:'input',x:30,y:340,w:90,h:48},
+      {id:'dec_emb',label:'Decoder\nEmbedding',type:'embed',x:150,y:340,w:100,h:48},
+      {id:'dec_sa',label:'Masked\nSelf-Attention',type:'attention',x:280,y:320,w:110,h:52},
+      {id:'cross',label:'Cross-Attention\n(enc ↔ dec)',type:'attention',x:280,y:386,w:110,h:58},
+      {id:'dec_ffn',label:'Decoder\nFFN',type:'ffn',x:280,y:458,w:110,h:42},
+      {id:'out_lin',label:'Output\nLinear+Softmax',type:'output',x:430,y:440,w:120,h:48},
+      {id:'out_tok',label:'Generated\nToken',type:'input',x:590,y:440,w:90,h:48},
+    ],
+    conns:[
+      {f:'src',t:'enc_emb'},{f:'enc_emb',t:'enc_sa'},{f:'enc_sa',t:'enc_ffn'},{f:'enc_ffn',t:'enc_out'},
+      {f:'tgt',t:'dec_emb'},{f:'dec_emb',t:'dec_sa'},{f:'dec_sa',t:'cross'},{f:'cross',t:'dec_ffn'},
+      {f:'dec_ffn',t:'out_lin'},{f:'out_lin',t:'out_tok'},
+      {f:'enc_out',t:'cross',label:'K,V', style:'cross'},
+    ],
+    steps:['Source Input','Encoder Embedding','Bidirectional Self-Attention','Encoder FFN','Encoder Hidden States','Target Input','Decoder Masked Self-Attention','Cross-Attention to Encoder','Decoder FFN','Generate Token'],
+  },
+
+  'bert': {
+    id:'bert', name:'Encoder-only (BERT)', short:'BERT / RoBERTa', cat:'text',
+    year:'Devlin et al. 2018',
+    desc:`Bidirectional encoder: every token can attend to every other token (full attention mask). Pre-trained with masked language modeling (MLM) and next sentence prediction. Excels at understanding tasks (classification, NER, QA) but not generative tasks without modification. The [CLS] token aggregates global sequence representation.`,
+    formula:'BERT(x) = TransformerEncoder(x₁⊕x₂⊕…⊕xₙ)\nMLM: P(xᵢ|x₋ᵢ) = softmax(WₒLN(hᵢ))',
+    innovations:['Full bidirectional attention','[MASK] token training objective','[CLS] token for classification','[SEP] token for segment separation','WordPiece tokenization','NSP and MLM joint pre-training'],
+    stats:{params:'110M–340M',layers:'12–24',heads:'12–16',ctx:'512'},
+    models:['BERT','RoBERTa','DeBERTa','ELECTRA','ALBERT','ModernBERT'],
+    steps:['Input Tokens','Add [CLS] & [SEP]','Token Embedding','Segment Embedding','Position Embedding','Bidirectional Self-Attention (×12)','[CLS] Pooling','Task Head'],
+    nodes:[
+      {id:'inp', label:'Input with\n[CLS][SEP]',type:'input',x:30,y:240,w:100,h:50},
+      {id:'emb',label:'Token+Segment\n+Position Emb.',type:'embed',x:160,y:240,w:110,h:50},
+      {id:'sa1',label:'Bidirectional\nSelf-Attention ×N',type:'attention',x:300,y:220,w:120,h:60},
+      {id:'ffn1',label:'FFN ×N',type:'ffn',x:300,y:295,w:120,h:42},
+      {id:'cls',label:'[CLS]\nPooler',type:'latent',x:455,y:220,w:90,h:50,desc:'CLS token output used as sentence representation.'},
+      {id:'tok_out',label:'Token\nRepresentations',type:'latent',x:455,y:285,w:110,h:50},
+      {id:'cls_task',label:'Classification\nHead',type:'output',x:590,y:210,w:100,h:50},
+      {id:'tok_task',label:'Token-level\nTasks (NER/QA)',type:'output',x:590,y:275,w:110,h:50},
+    ],
+    conns:[
+      {f:'inp',t:'emb'},{f:'emb',t:'sa1'},{f:'sa1',t:'ffn1'},{f:'ffn1',t:'cls'},{f:'ffn1',t:'tok_out'},
+      {f:'cls',t:'cls_task'},{f:'tok_out',t:'tok_task'},
+    ],
+  },
+
+  'mamba': {
+    id:'mamba', name:'State Space Model (Mamba)', short:'Mamba / SSM', cat:'text',
+    year:'Gu & Dao 2023',
+    badge:'New',
+    desc:`State Space Models (SSMs) like Mamba process sequences via a hidden state that is updated recurrently — similar to RNNs — but can be parallelized during training via a structured selective scan. Mamba adds input-dependent (selective) state transitions: the SSM parameters are functions of the input, enabling content-based reasoning. Sub-quadratic complexity vs. Transformer's O(n²) attention.`,
+    formula:'h′(t) = Ah(t) + Bx(t)\ny(t) = Ch(t) + Dx(t)\nMamba: B,C,Δ = f(x) [selective]',
+    innovations:['O(n) inference vs O(n²) attention','Recurrent inference, parallel training','Input-selective state transitions','Structured state space parameterization','Hardware-aware parallel scan algorithm','No explicit positional encoding needed'],
+    stats:{params:'130M–3B',layers:'48–64',ctx:'∞ (recurrent)'},
+    models:['Mamba','Mamba-2','Jamba','Zamba','FalconMamba','MambaFormer'],
+    badge:'new',
+    steps:['Input Tokens','Input Projection','SSM Parameters (Selective)','Selective Scan','Output Projection','Gated MLP','Layer Output'],
+    nodes:[
+      {id:'inp', label:'Input x(t)',type:'input',x:30,y:250,w:90,h:50},
+      {id:'proj_bc',label:'B,C,Δ\nProjections',type:'embed',x:155,y:220,w:100,h:50,desc:'Input-dependent (selective) SSM parameters computed from x.'},
+      {id:'proj_x',label:'x projection\n(expand 2×)',type:'embed',x:155,y:285,w:100,h:50},
+      {id:'ssm',label:'Selective\nState Space\nModel (S6)',type:'attention',x:295,y:215,w:110,h:80,desc:'Core SSM: h′=Ah+Bx, y=Ch+Dx. State A is fixed; B,C,Δ are input-dependent.', formula:'h′ₜ=Āhₜ₋₁+B̄xₜ, yₜ=Cₜhₜ'},
+      {id:'conv',label:'Causal\nConv1D',type:'ffn',x:295,y:307,w:110,h:42,desc:'Short depthwise conv before SSM to capture local context.'},
+      {id:'act',label:'SiLU\nActivation',type:'norm',x:295,y:362,w:110,h:36},
+      {id:'gate',label:'Gated\nMultiply',type:'merge',x:440,y:255,w:90,h:50,desc:'Gating mechanism: output = SSM(x) ⊗ σ(proj_x)'},
+      {id:'out_proj',label:'Output\nProjection',type:'output',x:565,y:255,w:100,h:50},
+      {id:'out',label:'Output y(t)',type:'input',x:695,y:255,w:80,h:50},
+    ],
+    conns:[
+      {f:'inp',t:'proj_bc'},{f:'inp',t:'proj_x'},
+      {f:'proj_bc',t:'ssm'},{f:'proj_x',t:'conv'},{f:'conv',t:'act'},{f:'act',t:'ssm'},
+      {f:'ssm',t:'gate'},{f:'proj_x',t:'gate', dash:true},
+      {f:'gate',t:'out_proj'},{f:'out_proj',t:'out'},
+    ],
+  },
+
+  // ── MULTIMODAL TEXT ──────────────────────────────────────────
+  'clip': {
+    id:'clip', name:'Contrastive VL (CLIP)', short:'CLIP / SigLIP', cat:'multimodal',
+    year:'Radford et al. 2021',
+    desc:`CLIP trains a vision encoder and text encoder jointly with contrastive loss: matching image-text pairs are pulled together in embedding space, non-matching pairs pushed apart. At inference, image features are compared against text descriptions via cosine similarity. Foundation for zero-shot classification and cross-modal retrieval.`,
+    formula:'L = -log exp(sim(Iᵢ,Tᵢ)/τ) / Σⱼ exp(sim(Iᵢ,Tⱼ)/τ)',
+    innovations:['Contrastive image-text pre-training','Zero-shot classification via text prompts','Shared embedding space','Massive scale: 400M+ pairs','ViT vision encoder replaces CNN','SigLIP improves with sigmoid loss'],
+    stats:{params:'400M–4B',batch:'32K+',emb:'512–1024'},
+    models:['CLIP','SigLIP','ALIGN','Florence','EVA-CLIP','OpenCLIP','MetaCLIP'],
+    steps:['Image Input','Patch Embedding','Vision Transformer','Image Embedding','Text Input','Text Encoding','Text Embedding','Contrastive Loss'],
+    nodes:[
+      {id:'img',label:'Image\nInput',type:'input',x:30,y:160,w:90,h:50},
+      {id:'patch',label:'Patch\nEmbedding\n16×16',type:'embed',x:155,y:155,w:100,h:58,desc:'Image split into 14×14 or 16×16 patches; each patch linearly projected to d-dimensional embedding.'},
+      {id:'vit',label:'Vision\nTransformer\n(ViT-L/14)',type:'attention',x:290,y:148,w:110,h:70,desc:'Stack of transformer blocks with full (non-causal) attention over patch tokens.'},
+      {id:'img_emb',label:'Image\nEmbedding\n[CLS]',type:'latent',x:435,y:160,w:100,h:50,desc:'[CLS] token output projected to joint embedding space.'},
+      {id:'txt',label:'Text\nInput',type:'input',x:30,y:360,w:90,h:50},
+      {id:'tok',label:'Text\nTokenizer\n+Embedding',type:'embed',x:155,y:355,w:100,h:58},
+      {id:'txtenc',label:'Text\nTransformer\n(Causal)',type:'attention',x:290,y:348,w:110,h:70},
+      {id:'txt_emb',label:'Text\nEmbedding\n[EOS]',type:'latent',x:435,y:360,w:100,h:50},
+      {id:'cosim',label:'Cosine\nSimilarity\nMatrix',type:'merge',x:580,y:245,w:100,h:60,desc:'N×N matrix of image-text similarities used for contrastive loss.'},
+      {id:'loss',label:'Contrastive\nLoss',type:'output',x:715,y:245,w:90,h:60},
+    ],
+    conns:[
+      {f:'img',t:'patch'},{f:'patch',t:'vit'},{f:'vit',t:'img_emb'},
+      {f:'txt',t:'tok'},{f:'tok',t:'txtenc'},{f:'txtenc',t:'txt_emb'},
+      {f:'img_emb',t:'cosim'},{f:'txt_emb',t:'cosim'},{f:'cosim',t:'loss'},
+    ],
+  },
+
+  'llava': {
+    id:'llava', name:'Vision-Language Model', short:'LLaVA / Flamingo', cat:'multimodal',
+    year:'Liu et al. 2023 · Alayrac et al. 2022',
+    desc:`Connects a vision encoder (usually pre-trained ViT-CLIP) to a large language model via a connector module (MLP, cross-attention, or Q-Former). The LLM receives visual tokens alongside text tokens, enabling visual question answering, image captioning, and document understanding. Cross-attention variants (Flamingo) can handle arbitrary image-text interleaving.`,
+    formula:'y = LLM([visual_tokens; text_tokens])\nvisual_tokens = Connector(ViT(image))',
+    innovations:['Frozen ViT + trainable connector','Visual instruction tuning','Interleaved image-text generation','Q-Former queries visual info on demand','Multi-image / video support','Tile encoding for high-res images'],
+    stats:{params:'7B–72B',res:'336–4K',vis_tok:'256–2048'},
+    models:['LLaVA-1.6','Flamingo','InternVL2','Qwen2-VL','PaLI','Pixtral','GPT-4V'],
+    steps:['Image Input','CLIP ViT Encode','Visual Projection','Text Input','Text Tokenize','Concatenate Tokens','LLM Processing','Text Output'],
+    nodes:[
+      {id:'img',label:'Image',type:'input',x:30,y:150,w:80,h:48},
+      {id:'vit',label:'Vision\nEncoder\n(ViT-CLIP)',type:'attention',x:140,y:135,w:110,h:68,desc:'Pre-trained CLIP ViT encodes image into patch features. Often frozen during LLM training.'},
+      {id:'conn',label:'Visual\nProjector\n(MLP / Resampler)',type:'embed',x:285,y:148,w:110,h:52,desc:'Bridges vision and language spaces. Can be simple 2-layer MLP (LLaVA) or cross-attention Perceiver Resampler (Flamingo).'},
+      {id:'vis_tok',label:'Visual\nTokens',type:'latent',x:430,y:150,w:90,h:48},
+      {id:'txt',label:'Text\nPrompt',type:'input',x:30,y:350,w:90,h:48},
+      {id:'tok',label:'Text\nTokenizer',type:'embed',x:150,y:350,w:100,h:48},
+      {id:'txt_tok',label:'Text\nTokens',type:'latent',x:285,y:350,w:90,h:48},
+      {id:'concat',label:'Token\nConcatenation\n[visual; text]',type:'merge',x:430,y:240,w:100,h:60,desc:'Visual and text tokens merged into single sequence fed to LLM.'},
+      {id:'llm',label:'Large\nLanguage\nModel (LLM)',type:'attention',x:575,y:225,w:110,h:90,desc:'Decoder-only transformer processes combined token sequence. Can generate text conditioned on visual context.'},
+      {id:'out',label:'Text\nOutput',type:'output',x:720,y:255,w:80,h:48},
+    ],
+    conns:[
+      {f:'img',t:'vit'},{f:'vit',t:'conn'},{f:'conn',t:'vis_tok'},
+      {f:'txt',t:'tok'},{f:'tok',t:'txt_tok'},
+      {f:'vis_tok',t:'concat'},{f:'txt_tok',t:'concat'},
+      {f:'concat',t:'llm'},{f:'llm',t:'out'},
+    ],
+  },
+
+  // ── OMNI MODELS ──────────────────────────────────────────────
+  'omni': {
+    id:'omni', name:'Omni / Any-to-Any Model', short:'GPT-4o style', cat:'omni',
+    year:'OpenAI GPT-4o 2024 · Gemini 2024',
+    badge:'SOTA',
+    desc:`Omni models process and generate across all modalities natively — text, audio, image, and video — within a single unified model. Audio is tokenized directly (rather than via a speech-to-text pipeline), enabling native voice understanding with emotional nuance, speaker characteristics, and paralinguistic signals preserved. A shared decoder produces tokens of any type.`,
+    formula:'P(yₜ|y₁…yₜ₋₁, cond) where y ∈ {text,audio,image,video} tokens',
+    innovations:['Native audio tokenization (no STT pipeline)','End-to-end voice latency <300ms','Unified token space across modalities','Modality-specific heads for output','Real-time audio/video streaming','Emotional/prosodic audio understanding'],
+    stats:{params:'~unknown',modalities:'text,audio,image,video',lat:'<300ms'},
+    models:['GPT-4o','Gemini 1.5 Ultra','Gemini 2.0','Claude 3.5 Sonnet (partial)','Qwen-Audio'],
+    steps:['Input Routing','Modality Encoding','Token Projection','Unified Transformer','Output Routing','Modality Decoding'],
+    nodes:[
+      {id:'txt_in',label:'Text\nInput',type:'input',x:20,y:100,w:85,h:44},
+      {id:'aud_in',label:'Audio\nInput',type:'input',x:20,y:165,w:85,h:44},
+      {id:'img_in',label:'Image\nInput',type:'input',x:20,y:230,w:85,h:44},
+      {id:'vid_in',label:'Video\nInput',type:'input',x:20,y:295,w:85,h:44},
+      {id:'txt_enc',label:'Text\nTokenizer',type:'embed',x:135,y:100,w:95,h:44},
+      {id:'aud_enc',label:'Audio\nEncoder\n(tokenizer)',type:'codec',x:135,y:160,w:95,h:52},
+      {id:'img_enc',label:'Vision\nEncoder\n(ViT)',type:'embed',x:135,y:224,w:95,h:52},
+      {id:'vid_enc',label:'Video\nEncoder',type:'embed',x:135,y:288,w:95,h:44},
+      {id:'proj',label:'Unified\nProjection\n(per modality)',type:'merge',x:265,y:185,w:100,h:60,desc:'Each modality projected to same embedding dimension for unified processing.'},
+      {id:'shared',label:'Shared\nDecoder\nTransformer',type:'attention',x:405,y:175,w:115,h:80,desc:'Single large transformer processes all modalities. Attention over heterogeneous token sequences.'},
+      {id:'route',label:'Output\nRouter',type:'merge',x:560,y:185,w:95,h:60,desc:'Decides output modality and routes to appropriate decoder head.'},
+      {id:'txt_out',label:'Text\nOutput',type:'output',x:695,y:120,w:85,h:40},
+      {id:'aud_out',label:'Audio\nOutput',type:'output',x:695,y:175,w:85,h:40},
+      {id:'img_out',label:'Image\nOutput',type:'output',x:695,y:230,w:85,h:40},
+      {id:'vid_out',label:'Video\nOutput',type:'output',x:695,y:285,w:85,h:40},
+    ],
+    conns:[
+      {f:'txt_in',t:'txt_enc'},{f:'aud_in',t:'aud_enc'},{f:'img_in',t:'img_enc'},{f:'vid_in',t:'vid_enc'},
+      {f:'txt_enc',t:'proj'},{f:'aud_enc',t:'proj'},{f:'img_enc',t:'proj'},{f:'vid_enc',t:'proj'},
+      {f:'proj',t:'shared'},{f:'shared',t:'route'},
+      {f:'route',t:'txt_out'},{f:'route',t:'aud_out'},{f:'route',t:'img_out'},{f:'route',t:'vid_out'},
+    ],
+  },
+
+  // ── IMAGE GENERATION ──────────────────────────────────────────
+  'ddpm': {
+    id:'ddpm', name:'Denoising Diffusion (DDPM)', short:'DDPM / DDIM', cat:'image',
+    year:'Ho et al. 2020',
+    desc:`Diffusion models learn to reverse a Markov chain of noise addition. The forward process gradually adds Gaussian noise to data over T steps (β schedule). The reverse process is learned by a neural network (U-Net) that predicts the noise at each step. DDIM accelerates sampling by making the reverse process deterministic, reducing steps from 1000 to ~50.`,
+    formula:'Forward: q(xₜ|xₜ₋₁) = N(√(1-βₜ)xₜ₋₁, βₜI)\nReverse: pθ(xₜ₋₁|xₜ) = N(μθ(xₜ,t), Σθ)\nL = E||ε - εθ(√ᾱxₒ+√(1-ᾱ)ε, t)||²',
+    innovations:['Markov chain forward/reverse process','Score function estimation','DDIM deterministic sampling (50 steps)','Classifier guidance for conditioning','Classifier-free guidance (CFG)','v-prediction objective improves quality'],
+    stats:{params:'100M–1B',steps:'1000 train / 20–50 sample',res:'256–1024'},
+    models:['DALL-E 2','Imagen','DeepFloyd IF','Consistency Models'],
+    steps:['Clean Image x₀','Add Noise (T steps)','Noisy Image xₜ','U-Net Predicts Noise ε̂','Subtract Noise','Denoised Image'],
+    nodes:[
+      {id:'x0', label:'Clean Image\nx₀',type:'input',x:30,y:240,w:95,h:50},
+      {id:'fwd',label:'Forward\nProcess q\n(add noise)',type:'ffn',x:160,y:225,w:100,h:70,desc:'β-schedule adds Gaussian noise: xₜ = √ᾱₜ·x₀ + √(1-ᾱₜ)·ε'},
+      {id:'xt',label:'Noisy Image xₜ\n(pure noise\nif t=T)',type:'latent',x:295,y:225,w:100,h:70,desc:'At t=T, xₜ ≈ N(0,I) — pure Gaussian noise. Random noise at inference start.'},
+      {id:'tc',label:'Timestep\nConditioning t',type:'embed',x:295,y:318,w:100,h:42,desc:'Sinusoidal timestep embedding tells U-Net which noise level to predict.'},
+      {id:'unet',label:'U-Net\nNoise Predictor\nεθ(xₜ, t, c)',type:'attention',x:430,y:210,w:115,h:95,desc:'Convolutional U-Net with skip connections + attention. Predicts noise ε added to xₜ. Self+cross attention layers for text conditioning.'},
+      {id:'sub',label:'Noise\nSubtraction\n(reverse step)',type:'merge',x:580,y:228,w:100,h:65,desc:'xₜ₋₁ = (1/√αₜ)(xₜ - (1-αₜ)/√(1-ᾱₜ)·εθ) + σₜz'},
+      {id:'out',label:'Generated\nImage x₀',type:'output',x:715,y:240,w:90,h:50},
+    ],
+    conns:[
+      {f:'x0',t:'fwd'},{f:'fwd',t:'xt'},{f:'xt',t:'unet'},{f:'tc',t:'unet'},
+      {f:'unet',t:'sub'},{f:'xt',t:'sub',dash:true},{f:'sub',t:'out'},
+    ],
+    demo:'diffusion',
+  },
+
+  'ldm': {
+    id:'ldm', name:'Latent Diffusion (LDM)', short:'Stable Diffusion', cat:'image',
+    year:'Rombach et al. 2022',
+    badge:'SOTA',
+    desc:`Latent Diffusion Models compress images into a low-dimensional latent space with a VAE before applying the diffusion process. This drastically reduces computation (from 512×512 pixels to 64×64 latents). Cross-attention in the U-Net enables text conditioning via CLIP text embeddings. The foundation of Stable Diffusion.`,
+    formula:'z = E(x), x̂ = D(z)\nDiffusion in z-space: εθ(zₜ, t, τθ(y))\nτθ(y) = CLIP/T5 text embedding',
+    innovations:['Diffusion in latent space (8× compression)','VAE encoder/decoder boundary','CLIP text conditioning via cross-attention','High-resolution without quadratic cost','ControlNet/LoRA adapter ecosystem','Classifier-free guidance (w=7.5 typical)'],
+    stats:{params:'860M–2B',latent:'64×64×4',cfgscale:'7.5'},
+    models:['Stable Diffusion 1.5/2/3/3.5','SDXL','Kandinsky','Playground v2'],
+    steps:['Text Input','CLIP Text Encode','Random Noise z','U-Net + Cross-Attention (×T)','Clean Latent z₀','VAE Decode','Final Image'],
+    nodes:[
+      {id:'txt',label:'Text\nPrompt',type:'input',x:20,y:120,w:85,h:48},
+      {id:'clip',label:'CLIP/T5\nText Encoder',type:'embed',x:130,y:118,w:100,h:52,desc:'CLIP-L/14 or T5-XXL encodes text to contextualized token embeddings τ.'},
+      {id:'txt_emb',label:'Text\nEmbeddings τ',type:'latent',x:265,y:120,w:95,h:48},
+      {id:'noise',label:'Random\nGaussian\nNoise z_T',type:'input',x:20,y:310,w:90,h:55},
+      {id:'vae_enc',label:'VAE\nEncoder E',type:'codec',x:150,y:290,w:90,h:52,desc:'Encodes 512×512 image → 64×64×4 latent. Not used at inference.'},
+      {id:'unet',label:'U-Net\n(+Attention+Cross-Attn)\nεθ(z,t,τ)',type:'attention',x:295,y:278,w:130,h:85,desc:'ResNet blocks + spatial self-attention + cross-attention to text embeddings τ. Predicts noise.'},
+      {id:'sched',label:'DDIM/PNDM\nScheduler',type:'ffn',x:460,y:290,w:100,h:65,desc:'Iterative noise removal with 20–50 steps.'},
+      {id:'lat',label:'Clean\nLatent z₀\n64×64×4',type:'latent',x:595,y:293,w:95,h:58},
+      {id:'vae_dec',label:'VAE\nDecoder D',type:'codec',x:725,y:293,w:90,h:58,desc:'Decodes latent z₀ → high-resolution image.'},
+      {id:'img',label:'Generated\n512-1024px\nImage',type:'output',x:725,y:165,w:90,h:75},
+    ],
+    conns:[
+      {f:'txt',t:'clip'},{f:'clip',t:'txt_emb'},{f:'txt_emb',t:'unet',label:'cross-attn'},
+      {f:'noise',t:'unet'},{f:'vae_enc',t:'unet',dash:true},
+      {f:'unet',t:'sched'},{f:'sched',t:'lat'},{f:'lat',t:'vae_dec'},
+      {f:'vae_dec',t:'img'},
+    ],
+    demo:'diffusion',
+  },
+
+  'dit': {
+    id:'dit', name:'Diffusion Transformer (DiT)', short:'DiT / FLUX', cat:'image',
+    year:'Peebles & Xie 2022 · FLUX 2024',
+    badge:'SOTA',
+    desc:`DiT replaces the U-Net backbone in diffusion with pure Vision Transformers, processing image patches as tokens. FLUX.1 (2024) adds rectified flow matching as the training objective and uses a bidirectional transformer with multimodal attention blocks (MM-DiT) that jointly attend over text and image tokens. State-of-the-art quality and prompt adherence.`,
+    formula:'Flow Matching: dxₜ/dt = vθ(xₜ,t,c)\nRectified Flow: xₜ = (1-t)x₀ + tε\nMM-DiT: Attn([xtxt; ximg])',
+    innovations:['Transformer replaces U-Net (scalable)','Flow matching: linear interpolation paths','MM-DiT: text/image tokens attend jointly','AdaLayerNorm with timestep/class conditioning','No fixed tokenizer size — arbitrary resolution','Parallel training efficiency over U-Net'],
+    stats:{params:'3B–12B',steps:'~50 inference',res:'256–2048+'},
+    models:['FLUX.1','Stable Diffusion 3/3.5','PixArt-Σ','SiT','SORA (video)'],
+    steps:['Text → T5 Embedding','Image → Patch Tokens','Timestep Embed','MM-DiT Block','Denoising (flow ODE)','Decode to Image'],
+    nodes:[
+      {id:'txt',label:'Text\nPrompt',type:'input',x:20,y:100,w:80,h:44},
+      {id:'t5',label:'T5-XXL\nEncoder',type:'embed',x:125,y:98,w:95,h:46,desc:'T5-XXL encodes text to 4096-dim per-token embeddings (strong semantic conditioning).'},
+      {id:'clip_e',label:'CLIP-L\nEncoder',type:'embed',x:125,y:158,w:95,h:42,desc:'CLIP-L adds visual-semantic alignment. Pooled embedding used as global conditioning.'},
+      {id:'noise',label:'Noisy\nLatent',type:'input',x:20,y:300,w:80,h:44},
+      {id:'patchify',label:'Patchify\n(2×2 patches)',type:'embed',x:125,y:296,w:95,h:52,desc:'Latent image divided into 2×2 patches; each patch flattened and linearly projected to d-dim token.'},
+      {id:'t_emb',label:'Timestep\nEmbedding',type:'norm',x:125,y:362,w:95,h:42},
+      {id:'mmdit',label:'MM-DiT Block ×N\n(Joint text+image\nattention)',type:'attention',x:270,y:195,w:135,h:120,desc:'Each MM-DiT block processes text and image token streams with separate LayerNorms but shared attention: both token types attend to each other.', formula:'Q,K,V from [txt_tokens; img_tokens]'},
+      {id:'unpatch',label:'Unpatchify\n+ Final LN',type:'ffn',x:445,y:240,w:95,h:60},
+      {id:'flow',label:'ODE Solver\n(Euler/Heun)',type:'ffn',x:575,y:240,w:95,h:60,desc:'Integrates the learned velocity field to go from noise to image.'},
+      {id:'vae',label:'VAE\nDecode',type:'codec',x:705,y:240,w:80,h:60},
+      {id:'out',label:'Image',type:'output',x:705,y:150,w:80,h:60},
+    ],
+    conns:[
+      {f:'txt',t:'t5'},{f:'txt',t:'clip_e'},{f:'t5',t:'mmdit'},{f:'clip_e',t:'mmdit'},
+      {f:'noise',t:'patchify'},{f:'patchify',t:'mmdit'},{f:'t_emb',t:'mmdit'},
+      {f:'mmdit',t:'unpatch'},{f:'unpatch',t:'flow'},{f:'flow',t:'vae'},{f:'vae',t:'out'},
+    ],
+  },
+
+  'gan': {
+    id:'gan', name:'Generative Adversarial Network', short:'StyleGAN / GAN', cat:'image',
+    year:'Goodfellow et al. 2014 · StyleGAN3 2021',
+    desc:`GANs train two networks adversarially: a Generator maps random noise z to data, and a Discriminator distinguishes real from generated samples. The minimax game drives the generator to produce increasingly realistic outputs. StyleGAN3 introduces equivariant generator design for alias-free, spatially consistent generation.`,
+    formula:'min_G max_D V = E[log D(x)] + E[log(1-D(G(z)))]\nStyleGAN: w = MLP(z), y=Affine(w)',
+    innovations:['Adversarial training: generator vs discriminator','Progressive growing for stability','Style modulation (StyleGAN)','Adaptive instance normalization (AdaIN)','Perceptual path length regularization','Projection discriminator for conditioning'],
+    stats:{params:'30M–100M',steps:'25M+ imgs training',res:'512–1024'},
+    models:['StyleGAN3','BigGAN','GigaGAN','Projected GAN','VQGAN','DriveGAN'],
+    steps:['Latent z','Mapping Network (MLP)','Style Vector w','Synthesis Network','Generated Image','Discriminator','Real/Fake Loss'],
+    nodes:[
+      {id:'z',label:'Latent z\n~N(0,I)',type:'input',x:30,y:250,w:85,h:50,desc:'512-dim random Gaussian noise sampled at inference.'},
+      {id:'mapping',label:'Mapping\nNetwork\n(8-layer MLP)',type:'ffn',x:150,y:240,w:100,h:65,desc:'Non-linear mapping z→w disentangles latent space for better editability.'},
+      {id:'w',label:'Style\nVector w\n(disentangled)',type:'latent',x:285,y:248,w:100,h:50,desc:'W-space: more disentangled than Z-space. W+ uses per-layer styles.'},
+      {id:'synth',label:'Synthesis\nNetwork\n(Const→Upsample)',type:'ffn',x:420,y:220,w:110,h:90,desc:'Generates image from constant 4×4 feature map, progressively upsampled with AdaIN style modulation at each layer.'},
+      {id:'noise_inj',label:'Noise\nInjection',type:'norm',x:420,y:322,w:110,h:36,desc:'Per-pixel Gaussian noise added to each layer output for stochastic variation.'},
+      {id:'fake_img',label:'Fake\nImage',type:'latent',x:570,y:240,w:85,h:50},
+      {id:'real_img',label:'Real\nImage',type:'input',x:570,y:340,w:85,h:50},
+      {id:'disc',label:'Discriminator\n(Conv layers)',type:'special',x:700,y:270,w:105,h:65,desc:'Convolutional network maps image to real/fake logit. Uses spectral normalization for training stability.'},
+      {id:'loss',label:'Adversarial\nLoss',type:'output',x:700,y:365,w:105,h:44},
+    ],
+    conns:[
+      {f:'z',t:'mapping'},{f:'mapping',t:'w'},{f:'w',t:'synth'},{f:'synth',t:'noise_inj'},
+      {f:'noise_inj',t:'fake_img'},{f:'fake_img',t:'disc'},{f:'real_img',t:'disc'},{f:'disc',t:'loss'},
+    ],
+  },
+
+  'vae': {
+    id:'vae', name:'Variational Autoencoder', short:'VAE / VQ-VAE', cat:'image',
+    year:'Kingma & Welling 2013 · VQ-VAE: Oord 2017',
+    desc:`A VAE learns a probabilistic latent space. The encoder outputs a mean μ and log-variance σ² for each input. During training, z is sampled via the reparameterization trick (z = μ + σ·ε), enabling gradients to flow. The ELBO loss trains the network to reconstruct while keeping z close to a prior N(0,I). VQ-VAE replaces continuous z with discrete codebook vectors.`,
+    formula:'ELBO = E[log p(x|z)] - KL(q(z|x)||p(z))\nReparam: z = μ + σ⊙ε, ε~N(0,I)\nVQ: z_q = argmin_k||z-eₖ||',
+    innovations:['Probabilistic encoder: outputs μ and σ²','Reparameterization trick enables backprop','KL divergence regularizes latent space','Continuous latent space supports interpolation','VQ-VAE: discrete codebook for language-model-compatible tokens','Codebook collapse prevention (EMA updates)'],
+    stats:{params:'10M–100M',latent:'4–16 channels',codebook:'8192 (VQ)'},
+    models:['SD-VAE','VQ-VAE-2','DALL-E (VQ)','LlamaGen','MaskGIT','AudioLM'],
+    steps:['Input Image','Encoder','Sample μ and σ','Reparameterize z=μ+σε','Decoder','Reconstruct','ELBO Loss'],
+    nodes:[
+      {id:'x',label:'Input\nImage x',type:'input',x:30,y:245,w:85,h:50},
+      {id:'enc',label:'Encoder\n(CNN/ViT)',type:'ffn',x:150,y:233,w:100,h:65,desc:'Convolutional encoder maps image to latent distribution parameters.'},
+      {id:'mu',label:'Mean\nμ(x)',type:'norm',x:290,y:200,w:85,h:44,desc:'Mean of approximate posterior q(z|x).'},
+      {id:'logvar',label:'Log-Var\nlog σ²(x)',type:'norm',x:290,y:260,w:85,h:44,desc:'Log-variance of approximate posterior q(z|x).'},
+      {id:'eps',label:'ε ~ N(0,I)\n(random)',type:'input',x:290,y:320,w:85,h:44},
+      {id:'reparam',label:'Reparameterize\nz = μ+σ·ε',type:'merge',x:415,y:238,w:105,h:58,desc:'Reparameterization trick: z = μ + σ⊙ε allows gradients to flow through stochastic sampling.', formula:'z = μ + exp(logσ²/2)·ε'},
+      {id:'z',label:'Latent z',type:'latent',x:415,y:320,w:85,h:44},
+      {id:'dec',label:'Decoder\n(CNN/ViT)',type:'ffn',x:550,y:238,w:100,h:58,desc:'Convolutional decoder maps z back to image space.'},
+      {id:'x_hat',label:'Reconstructed\nImage x̂',type:'output',x:690,y:238,w:100,h:58},
+      {id:'loss',label:'ELBO Loss\n(Recon+KL)',type:'special',x:550,y:340,w:105,h:50,desc:'ELBO = reconstruction loss (pixel MSE/perceptual) - β·KL divergence.'},
+    ],
+    conns:[
+      {f:'x',t:'enc'},{f:'enc',t:'mu'},{f:'enc',t:'logvar'},{f:'mu',t:'reparam'},
+      {f:'logvar',t:'reparam'},{f:'eps',t:'reparam'},{f:'reparam',t:'z'},{f:'z',t:'dec'},
+      {f:'dec',t:'x_hat'},{f:'x_hat',t:'loss',dash:true},{f:'x',t:'loss',dash:true},
+    ],
+  },
+
+  // ── VIDEO GENERATION ──────────────────────────────────────────
+  'video-diff': {
+    id:'video-diff', name:'Video Diffusion (DiT-based)', short:'Sora / CogVideoX', cat:'video',
+    year:'Ho et al. 2022 · Sora 2024',
+    badge:'SOTA',
+    desc:`Video diffusion extends image diffusion to 3D (spatial × temporal). Sora models video as sequences of spacetime patches — flattening all spatial/temporal patches into a unified token sequence for a DiT. Temporal attention allows cross-frame consistency. Flow matching with causal 3D VAE compresses video to compact latents. Enables arbitrary-duration, any-resolution generation.`,
+    formula:'Video = [frames f₁,f₂…fₙ] → 3D-VAE latent z ∈ ℝᵀˣᴴˣᵂˣᶜ\nDiT over spacetime patches p∈ℝˢ, s=t×h×w',
+    innovations:['3D-VAE compresses spatial and temporal','Spacetime patch tokenization','Temporal self-attention for cross-frame consistency','Causal 3D convolutions in VAE','Variable duration/resolution/FPS','Action/camera condition injection'],
+    stats:{params:'3B–30B',resolution:'256–1080p',duration:'4–60 sec'},
+    models:['Sora','CogVideoX','HunyuanVideo','Wan 2.1','Kling','Runway Gen-3'],
+    steps:['Text Prompt','Video VAE Compress','Spacetime Patchify','DiT Blocks (spatial+temporal)','ODE Solver','VAE Decode','Video Output'],
+    nodes:[
+      {id:'txt',label:'Text\nPrompt',type:'input',x:20,y:130,w:80,h:44},
+      {id:'t5',label:'T5 / CLIP\nEncoder',type:'embed',x:125,y:128,w:90,h:46},
+      {id:'txt_emb',label:'Text\nEmbeddings',type:'latent',x:245,y:130,w:85,h:44},
+      {id:'vid_lat',label:'Noisy Video\nLatent z_T\n3D-VAE compressed',type:'input',x:20,y:320,w:95,h:60},
+      {id:'vae3d',label:'3D-Causal\nVAE\nEncoder',type:'codec',x:145,y:318,w:95,h:62,desc:'Causal 3D VAE compresses T×H×W video to T/4×H/8×W/8×C latent while preserving temporal causality.'},
+      {id:'st_patch',label:'Spacetime\nPatch Embed\n(2×2×1 patches)',type:'embed',x:270,y:320,w:100,h:62,desc:'Video latent divided into 3D patches. Each patch flattened and linearly projected to transformer dim.'},
+      {id:'t_emb',label:'Timestep\nEmbed',type:'norm',x:270,y:400,w:100,h:38},
+      {id:'dit_spat',label:'DiT Spatial\nSelf-Attention',type:'attention',x:410,y:255,w:110,h:60,desc:'2D spatial attention within each frame.'},
+      {id:'dit_temp',label:'DiT Temporal\nSelf-Attention',type:'attention',x:410,y:325,w:110,h:60,desc:'1D temporal attention across frames at same spatial location.'},
+      {id:'dit_cross',label:'Cross-Attention\n(text condition)',type:'attention',x:410,y:395,w:110,h:52},
+      {id:'dit_ffn',label:'FFN\n+AdaLayerNorm',type:'ffn',x:410,y:458,w:110,h:42},
+      {id:'ode',label:'ODE\nSolver',type:'ffn',x:560,y:350,w:90,h:50},
+      {id:'vae_dec',label:'3D-VAE\nDecoder',type:'codec',x:685,y:310,w:90,h:58},
+      {id:'out',label:'Video\nOutput',type:'output',x:685,y:200,w:90,h:60},
+    ],
+    conns:[
+      {f:'txt',t:'t5'},{f:'t5',t:'txt_emb'},{f:'txt_emb',t:'dit_cross'},
+      {f:'vid_lat',t:'vae3d'},{f:'vae3d',t:'st_patch'},{f:'st_patch',t:'dit_spat'},{f:'t_emb',t:'dit_spat'},
+      {f:'dit_spat',t:'dit_temp'},{f:'dit_temp',t:'dit_cross'},{f:'dit_cross',t:'dit_ffn'},
+      {f:'dit_ffn',t:'ode'},{f:'ode',t:'vae_dec'},{f:'vae_dec',t:'out'},
+    ],
+  },
+
+  'video-pred': {
+    id:'video-pred', name:'Autoregressive Video Gen.', short:'VideoGPT style', cat:'video',
+    year:'Yan et al. 2021',
+    desc:`Autoregressive video generation uses VQ-VAE to tokenize video frames into discrete tokens, then applies a transformer to predict tokens sequentially — treating video generation as language modeling. Temporal-aware 3D attention captures both spatial and temporal relationships. Suitable for controllable, long-form generation.`,
+    formula:'P(V) = Πₜ Πᵢ P(vₜᵢ | v<ₜᵢ)\nvₜᵢ = VQ-VAE codebook index',
+    innovations:['VQ-VAE discrete video tokenization','Autoregressive frame-by-frame generation','3D sliding window attention','Temporal consistency via token conditioning','Frame rate conditioning','Audio-video joint generation'],
+    stats:{params:'1B–7B',fps:'8–24',res:'256–512'},
+    models:['VideoGPT','MAGVIT-2','UniSim','VideoPoet','VideoLLaMA'],
+    steps:['Video Frames','3D VQ-VAE Encode','Discrete Tokens','Transformer (AR)','Predict Next Token','3D VQ-VAE Decode','Video'],
+    nodes:[
+      {id:'frames',label:'Video\nFrames',type:'input',x:25,y:250,w:85,h:50},
+      {id:'vq3d',label:'3D VQ-VAE\nEncoder',type:'codec',x:140,y:240,w:95,h:65},
+      {id:'qtok',label:'Discrete Video\nTokens (codebook)',type:'latent',x:270,y:245,w:100,h:58},
+      {id:'trans',label:'Transformer\n(causal 3D attn)',type:'attention',x:405,y:238,w:110,h:72},
+      {id:'lmhead',label:'Token\nPrediction\nHead',type:'ffn',x:550,y:245,w:95,h:58},
+      {id:'dec',label:'3D VQ-VAE\nDecoder',type:'codec',x:680,y:245,w:95,h:58},
+      {id:'out',label:'Generated\nVideo',type:'output',x:680,y:170,w:95,h:50},
+    ],
+    conns:[
+      {f:'frames',t:'vq3d'},{f:'vq3d',t:'qtok'},{f:'qtok',t:'trans'},{f:'trans',t:'lmhead'},
+      {f:'lmhead',t:'dec'},{f:'dec',t:'out'},
+    ],
+  },
+
+  // ── AUDIO GENERATION ──────────────────────────────────────────
+  'wavenet': {
+    id:'wavenet', name:'WaveNet', short:'WaveNet / WaveRNN', cat:'audio',
+    year:'van den Oord et al. 2016',
+    desc:`WaveNet models the raw audio waveform autoregressively at 16-48kHz sample rate. Dilated causal convolutions provide exponentially growing receptive fields without losing temporal resolution. Each output sample conditions the next, enabling high-fidelity synthesis. A key breakthrough: neural synthesis matching human speech quality.`,
+    formula:'P(x) = Πₜ P(xₜ|x₁…xₜ₋₁)\nDilated conv with rate 2ᵏ for k=0,1,2…\nReceptive field = 2^K samples',
+    innovations:['Dilated causal convolutions','Exponential receptive field growth','Gated activation: tanh(Wf*x)⊗σ(Wg*x)','Residual + skip connections','Conditional on speaker/text embeddings','WaveGrad/DiffWave: diffusion-based faster synthesis'],
+    stats:{params:'4M–72M',sr:'16–48kHz',gen_speed:'~RTF 0.2'},
+    models:['WaveNet','WaveGlow','WaveGrad','DiffWave','HiFi-GAN','Vocos'],
+    steps:['Previous Samples','Causal Conv','Dilated Conv Stack (2¹→2²→2ⁿ)','Gated Activation','Residual+Skip Add','Softmax over μ-law PCM','Next Sample'],
+    nodes:[
+      {id:'ctx',label:'Context\nx₁…xₜ₋₁',type:'input',x:20,y:245,w:90,h:50},
+      {id:'causal',label:'Causal\nConv 1D',type:'ffn',x:140,y:243,w:90,h:52,desc:'Initial causal convolution: no future samples leak into current prediction.'},
+      {id:'d1',label:'Dilated\nConv d=2¹',type:'ffn',x:265,y:190,w:90,h:42},
+      {id:'d2',label:'Dilated\nConv d=2²',type:'ffn',x:265,y:245,w:90,h:42},
+      {id:'d3',label:'Dilated\nConv d=2³',type:'ffn',x:265,y:300,w:90,h:42},
+      {id:'dn',label:'⋮ Dilated\nConv d=2ⁿ',type:'ffn',x:265,y:355,w:90,h:42},
+      {id:'gate',label:'Gated\nActivation\ntanh⊗σ',type:'norm',x:395,y:255,w:95,h:62,desc:'gated activation = tanh(Wf*x) ⊗ σ(Wg*x). More expressive than ReLU.'},
+      {id:'skip',label:'Skip\nConnections\nSum',type:'merge',x:530,y:248,w:90,h:65},
+      {id:'relu_proj',label:'ReLU→Conv\n1×1 ×2',type:'ffn',x:660,y:248,w:90,h:65},
+      {id:'softmax',label:'Softmax\n256 classes\n(μ-law)',type:'output',x:660,y:345,w:90,h:50},
+      {id:'sample',label:'xₜ\nsample',type:'input',x:660,y:420,w:90,h:42},
+    ],
+    conns:[
+      {f:'ctx',t:'causal'},{f:'causal',t:'d1'},{f:'causal',t:'d2'},{f:'causal',t:'d3'},{f:'causal',t:'dn'},
+      {f:'d1',t:'gate'},{f:'d2',t:'gate'},{f:'d3',t:'gate'},{f:'dn',t:'gate'},
+      {f:'gate',t:'skip'},{f:'skip',t:'relu_proj'},{f:'relu_proj',t:'softmax'},{f:'softmax',t:'sample'},
+    ],
+  },
+
+  'audiolm': {
+    id:'audiolm', name:'AudioLM', short:'AudioLM / MusicLM', cat:'audio',
+    year:'Borsos et al. 2022',
+    badge:'SOTA',
+    desc:`AudioLM reformulates audio generation as hierarchical language modeling over two token types: semantic tokens (from w2v-BERT, capturing long-term structure/phonetics) and acoustic tokens (from SoundStream RVQ codec, capturing fine-grained acoustic detail). Three separate transformer stages enable coherent generation with high acoustic fidelity.`,
+    formula:'Stage 1: P(z_sem | context)\nStage 2: P(z_coarse_acs | z_sem)\nStage 3: P(z_fine_acs | z_coarse_acs)',
+    innovations:['Dual tokenization: semantic + acoustic','w2v-BERT captures linguistic/musical structure','SoundStream RVQ for fine acoustic detail','Three-stage hierarchical generation','No text transcripts required','SoundStorm: parallel acoustic model (100× faster)'],
+    stats:{params:'300M×3 stages',sr:'24kHz',ctx:'~30s'},
+    models:['AudioLM','MusicLM','AudioPaLM','VoiceBox','SoundStorm','VALL-E'],
+    steps:['Audio Input','w2v-BERT → Semantic Tokens','SoundStream → Acoustic Tokens','Stage 1: Semantic LM','Stage 2: Coarse Acoustic LM','Stage 3: Fine Acoustic LM','SoundStream Decode','Audio Output'],
+    nodes:[
+      {id:'aud',label:'Audio\nInput',type:'input',x:20,y:250,w:80,h:50},
+      {id:'bert',label:'w2v-BERT\nSemantic\nEncoder',type:'attention',x:130,y:205,w:100,h:72,desc:'Pre-trained w2v-BERT. K-means quantizes intermediate representations to 1024 semantic tokens at 25Hz.'},
+      {id:'ss_enc',label:'SoundStream\nRVQ Encoder\n(12 codebooks)',type:'codec',x:130,y:295,w:100,h:70,desc:'Neural audio codec. Residual Vector Quantization with 12 parallel codebooks at 50Hz. First 2-4 = coarse, rest = fine.'},
+      {id:'s_tok',label:'Semantic\nTokens\n~25Hz',type:'latent',x:265,y:205,w:90,h:52,desc:'1024-class discrete tokens capturing phonetics/melody/harmony.'},
+      {id:'a_coarse',label:'Coarse\nAcoustic Tokens\nQ1-Q4',type:'latent',x:265,y:278,w:90,h:52},
+      {id:'a_fine',label:'Fine\nAcoustic Tokens\nQ5-Q12',type:'latent',x:265,y:350,w:90,h:52},
+      {id:'lm1',label:'Stage 1\nSemantic LM\n(Transformer)',type:'attention',x:400,y:195,w:110,h:62,desc:'Decoder-only transformer autoregressively models semantic token sequence.'},
+      {id:'lm2',label:'Stage 2\nCoarse Acoustic LM\nconditioned on sem.',type:'attention',x:400,y:275,w:110,h:62,desc:'Conditioned on semantic tokens; predicts coarse acoustic tokens.'},
+      {id:'lm3',label:'Stage 3\nFine Acoustic LM\nconditioned on coarse',type:'attention',x:400,y:362,w:110,h:62,desc:'Conditioned on coarse acoustic tokens; predicts fine acoustic detail.'},
+      {id:'ss_dec',label:'SoundStream\nDecoder',type:'codec',x:560,y:280,w:100,h:65},
+      {id:'out',label:'Generated\nAudio\n24kHz',type:'output',x:700,y:280,w:90,h:65},
+    ],
+    conns:[
+      {f:'aud',t:'bert'},{f:'aud',t:'ss_enc'},
+      {f:'bert',t:'s_tok'},{f:'ss_enc',t:'a_coarse'},{f:'ss_enc',t:'a_fine'},
+      {f:'s_tok',t:'lm1'},{f:'lm1',t:'lm2'},{f:'s_tok',t:'lm2',dash:true},
+      {f:'lm2',t:'lm3'},{f:'a_coarse',t:'lm3',dash:true},
+      {f:'lm3',t:'ss_dec'},{f:'lm2',t:'ss_dec',dash:true},{f:'ss_dec',t:'out'},
+    ],
+  },
+
+  'flow-audio': {
+    id:'flow-audio', name:'Flow Matching Audio', short:'Voicebox / E2 TTS', cat:'audio',
+    year:'Le et al. 2023 (Voicebox)',
+    desc:`Flow matching audio models learn a continuous-time ODE that maps a simple prior (Gaussian noise) to audio distributions. Unlike diffusion, flow matching uses straight-line optimal transport paths, enabling fewer solver steps. Voicebox uses a masked audio infilling approach: fill in arbitrary masked audio segments conditioned on surrounding context and text.`,
+    formula:'dxₜ/dt = vθ(xₜ,t,c) ← velocity field\nOptimal Transport: straight paths E[||vθ-u||²]\nMasked infilling: p(x_mask | x_ctx, text)',
+    innovations:['Optimal transport flow paths (faster training)','Audio infilling/inpainting formulation','Speaker-conditional with voice prompt','In-context speech generation','Zero-shot voice cloning','Non-autoregressive: full audio at once'],
+    stats:{params:'330M',sr:'24kHz',steps:'16–32 ODE'},
+    models:['Voicebox','E2 TTS','F5-TTS','CosyVoice','MaskGCT','VoiceCraft'],
+    steps:['Text+Audio Context','Text Encoder','Audio VAE Compress','Sample Noise','Flow Matching ODE','VAE Decode','Speech Output'],
+    nodes:[
+      {id:'txt',label:'Text\nInput',type:'input',x:20,y:130,w:80,h:44},
+      {id:'aud_ctx',label:'Audio\nContext\n(voice prompt)',type:'input',x:20,y:310,w:80,h:52},
+      {id:'txt_enc',label:'Text\nEncoder',type:'embed',x:130,y:128,w:90,h:46},
+      {id:'aud_enc',label:'Audio\nEncoder / VAE',type:'codec',x:130,y:308,w:90,h:54},
+      {id:'mask_tok',label:'Masked\nAudio Latent\n(fill target)',type:'latent',x:265,y:295,w:95,h:58},
+      {id:'noise',label:'Gaussian\nNoise',type:'input',x:265,y:200,w:90,h:44},
+      {id:'flow_net',label:'Flow Matching\nNetwork\n(Transformer+Conv)',type:'attention',x:400,y:210,w:120,h:80,desc:'Predicts velocity field vθ(x,t,c). Conditions on text embeddings and audio context via cross-attention.'},
+      {id:'ode_sol',label:'ODE Solver\n(Euler/Midpoint\n16 steps)',type:'ffn',x:565,y:228,w:100,h:65},
+      {id:'vae_dec',label:'VAE\nDecoder\n→ mel-spec',type:'codec',x:565,y:320,w:100,h:52},
+      {id:'vocoder',label:'Vocoder\n(HiFi-GAN)',type:'ffn',x:700,y:260,w:90,h:60,desc:'Neural vocoder converts mel-spectrogram to raw audio waveform.'},
+      {id:'out',label:'Speech\nOutput',type:'output',x:700,y:360,w:90,h:50},
+    ],
+    conns:[
+      {f:'txt',t:'txt_enc'},{f:'aud_ctx',t:'aud_enc'},{f:'aud_enc',t:'mask_tok'},
+      {f:'txt_enc',t:'flow_net'},{f:'mask_tok',t:'flow_net'},{f:'noise',t:'flow_net'},
+      {f:'flow_net',t:'ode_sol'},{f:'ode_sol',t:'vae_dec'},{f:'vae_dec',t:'vocoder'},{f:'vocoder',t:'out'},
+    ],
+  },
+
+  // ── REAL-TIME CONVERSATION ────────────────────────────────────
+  'realtime': {
+    id:'realtime', name:'Real-time Speech Model', short:'GPT-4o Voice', cat:'realtime',
+    year:'GPT-4o 2024',
+    badge:'SOTA',
+    desc:`End-to-end real-time conversational AI. Rather than cascading STT→LLM→TTS (which introduces multi-second latency and loses prosody/emotion), omni models process raw audio tokens natively. Voice Activity Detection triggers input processing; streaming autoregressive decoding produces audio tokens that are decoded to waveform in real-time, enabling sub-300ms response latency.`,
+    formula:'Audio → audio_tokens → LLM → audio_tokens → Audio\nE2E: no STT/TTS pipeline',
+    innovations:['End-to-end audio-to-audio (no STT pipeline)','<300ms response latency (vs >1s cascade)','Preserves speaker emotion and prosody','VAD (Voice Activity Detection) for turn-taking','Streaming token generation + streaming decode','Can be interrupted mid-response'],
+    stats:{lat:'<300ms TTFT',pipeline:'end-to-end',sr:'24kHz'},
+    models:['GPT-4o Realtime','Gemini Live','ElevenLabs Conversational AI','Hume EVI'],
+    steps:['Microphone Audio','Voice Activity Detection','Audio Tokenization','LLM (streaming)','Audio Token Decode','Speaker Output'],
+    nodes:[
+      {id:'mic',label:'Microphone\nAudio Stream',type:'input',x:20,y:245,w:90,h:50},
+      {id:'vad',label:'Voice Activity\nDetection (VAD)',type:'ffn',x:140,y:243,w:100,h:52,desc:'Detects speech onset/offset. Triggers input processing when user starts/stops speaking. Enables interruption.'},
+      {id:'aud_tok',label:'Audio\nTokenizer\n(RVQ codec)',type:'codec',x:275,y:243,w:100,h:52,desc:'Encodes audio chunks in real-time (streaming). Produces audio tokens at ~25-50Hz.'},
+      {id:'kvcache',label:'KV Cache\n(conversation\nhistory)',type:'latent',x:275,y:320,w:100,h:52,desc:'Efficient KV cache stores previous turns. Enables very long context with O(1) per-step cost.'},
+      {id:'llm',label:'Streaming\nLLM Decoder\n(omni model)',type:'attention',x:415,y:233,w:115,h:80,desc:'Autoregressive LLM produces audio tokens. Starts decoding after first few input tokens for minimal latency.'},
+      {id:'aud_det',label:'Audio Token\nDetokenizer\n(codec decode)',type:'codec',x:570,y:243,w:105,h:52,desc:'Decodes audio tokens back to waveform in real-time. Can play audio while still generating.'},
+      {id:'spk',label:'Speaker\nOutput\nStream',type:'output',x:715,y:245,w:80,h:50},
+    ],
+    conns:[
+      {f:'mic',t:'vad'},{f:'vad',t:'aud_tok'},{f:'aud_tok',t:'llm'},{f:'kvcache',t:'llm'},
+      {f:'llm',t:'kvcache',dash:true},{f:'llm',t:'aud_det'},{f:'aud_det',t:'spk'},
+    ],
+  },
+
+  'e2e-speech': {
+    id:'e2e-speech', name:'End-to-End Speech Synthesis', short:'TTS / VITS2', cat:'realtime',
+    year:'Kim et al. 2021 (VITS)',
+    desc:`VITS (Variational Inference with adversarial Training for end-to-end Speech synthesis) unifies acoustic model and vocoder in one model. A conditional VAE models the latent speech representation, trained with adversarial and mel-spectrogram loss. VITS2 adds transformer blocks and removes duration predictor issues. Supports zero-shot voice cloning via speaker encoder.`,
+    formula:'ELBO = E[log p(x|z)] - KL(q(z|x,c)||p(z|c))\nAlignment: monotonic attention (MAS)',
+    innovations:['End-to-end: no cascade model','Monotonic alignment search (MAS)','Stochastic duration predictor','Flow-based prior for z','GAN discriminator for waveform quality','Zero-shot voice cloning via speaker embedding'],
+    stats:{params:'83M',sr:'22050Hz',rtf:'>100×'},
+    models:['VITS','VITS2','YourTTS','Bark','NaturalSpeech2','CosyVoice'],
+    steps:['Text Input','Text Encoder','Monotonic Alignment','Duration Predictor','Flow Prior','VAE Decoder + Vocoder','Waveform Output'],
+    nodes:[
+      {id:'txt',label:'Text /\nPhonemes',type:'input',x:20,y:250,w:80,h:50},
+      {id:'txt_enc',label:'Text\nEncoder\n(Transformer)',type:'attention',x:130,y:248,w:100,h:52},
+      {id:'dur',label:'Stochastic\nDuration\nPredictor',type:'ffn',x:265,y:205,w:100,h:62,desc:'Predicts phoneme duration distribution using normalizing flows. Samples determine alignment.'},
+      {id:'mas',label:'Monotonic\nAlignment\nSearch (MAS)',type:'merge',x:265,y:285,w:100,h:52,desc:'Finds optimal monotonic alignment between text and latent audio frames via dynamic programming.'},
+      {id:'spk',label:'Speaker\nEncoder\n(d-vector)',type:'embed',x:130,y:370,w:100,h:50},
+      {id:'prior',label:'Normalizing\nFlow Prior\npθ(z|c)',type:'latent',x:405,y:248,w:100,h:62,desc:'Flow model maps Gaussian noise to speaker/text-conditioned prior for latent z.'},
+      {id:'dec',label:'Decoder\n(HiFi-GAN\nvocoder)',type:'codec',x:545,y:248,w:105,h:62,desc:'Upsampling convolutional decoder with multi-period discriminators generates waveform from z.'},
+      {id:'wave',label:'Waveform\nOutput',type:'output',x:695,y:252,w:80,h:52},
+    ],
+    conns:[
+      {f:'txt',t:'txt_enc'},{f:'txt_enc',t:'dur'},{f:'txt_enc',t:'mas'},{f:'dur',t:'mas'},
+      {f:'spk',t:'prior'},{f:'mas',t:'prior'},{f:'prior',t:'dec'},{f:'dec',t:'wave'},
+    ],
+  },
+
+  // ── 3D GENERATION ─────────────────────────────────────────────
+  'nerf': {
+    id:'nerf', name:'Neural Radiance Field', short:'NeRF / Instant-NGP', cat:'3d',
+    year:'Mildenhall et al. 2020',
+    desc:`NeRF represents a 3D scene as a continuous volumetric function: an MLP that takes (x,y,z,θ,φ) (position + viewing direction) and outputs (RGB color, σ density). Volume rendering integrates samples along camera rays to produce 2D images. Trained by comparing rendered views against real multi-view photos. Instant-NGP (2022) replaces the slow MLP with hash-encoded features for real-time training.`,
+    formula:'C(r) = Σₜ Tₜ(1-e^{-σₜδₜ})cₜ\nTₜ = exp(-Σₛ<ₜ σₛδₛ)\nF_θ: (x,d) → (c,σ)',
+    innovations:['Implicit neural representation of 3D scenes','Differentiable volume rendering','Positional encoding for high-freq detail','Instant-NGP: hash grid encoding (1000× faster)','NeRF in the wild (unconstrained photos)','Block-NeRF: city-scale scenes'],
+    stats:{params:'~2M MLP',train:'minutes (Instant-NGP)',res:'8K+ renders'},
+    models:['NeRF','Instant-NGP','Mip-NeRF 360','Nerfacto','ZipNeRF','K-Planes'],
+    steps:['Camera Rays','Sample Points Along Rays','Positional Encoding','MLP(x,y,z,θ,φ)','(RGB, density σ)','Volume Rendering Integral','Rendered Image'],
+    nodes:[
+      {id:'cam',label:'Camera\nPose',type:'input',x:20,y:245,w:80,h:50},
+      {id:'rays',label:'Ray\nSampling\n(hierarchical)',type:'ffn',x:130,y:238,w:95,h:62,desc:'For each pixel, cast a ray into the scene. Sample N coarse + N fine points along each ray.'},
+      {id:'pts',label:'3D Sample\nPoints\n(x,y,z,θ,φ)',type:'latent',x:260,y:240,w:95,h:58},
+      {id:'pe',label:'Positional\nEncoding\nγ(p)=sin/cos',type:'norm',x:260,y:322,w:95,h:50,desc:'Fourier positional encoding: maps low-dim input to high-freq features enabling MLP to learn fine detail.', formula:'γ(p) = [sin(2⁰πp), cos(2⁰πp), …, sin(2^L πp)]'},
+      {id:'hash',label:'Hash Grid\nEncoding\n(Instant-NGP)',type:'embed',x:260,y:390,w:95,h:50,desc:'Multi-resolution hash table lookup replaces positional encoding — 1000× faster training and inference.'},
+      {id:'mlp',label:'Neural\nRadiance MLP\nF_θ(x,d)→(c,σ)',type:'attention',x:400,y:240,w:110,h:80,desc:'8-layer MLP maps encoded position + viewing direction to RGB color and volume density σ.'},
+      {id:'render',label:'Volume\nRendering\n∫T(t)σ(t)c(t)dt',type:'merge',x:555,y:240,w:100,h:80,desc:'Quadrature approximation of volume rendering integral. Near samples contribute more if high density.', formula:'C(r) = Σₜ Tₜ αₜ cₜ'},
+      {id:'px',label:'Rendered\nPixel\nColor',type:'output',x:700,y:258,w:80,h:50},
+    ],
+    conns:[
+      {f:'cam',t:'rays'},{f:'rays',t:'pts'},{f:'pts',t:'pe'},{f:'pe',t:'mlp'},
+      {f:'pts',t:'hash'},{f:'hash',t:'mlp'},{f:'mlp',t:'render'},{f:'render',t:'px'},
+    ],
+  },
+
+  '3dgs': {
+    id:'3dgs', name:'3D Gaussian Splatting', short:'3DGS / DiffGS', cat:'3d',
+    year:'Kerbl et al. 2023',
+    badge:'SOTA',
+    desc:`3D Gaussian Splatting (3DGS) represents a scene as millions of 3D Gaussian primitives, each with position μ, covariance Σ (scale + rotation), opacity α, and spherical harmonic (SH) color coefficients. Differentiable splatting renders Gaussians to 2D images for real-time (100+ FPS) rendering. DiffGS (2024) adds a diffusion model over the Gaussian representation for generative 3D synthesis.`,
+    formula:'Gaussian G = {μ, Σ, α, sh_coeffs}\nSplat: project 3D Gaussians → 2D splats\nα-blending: C = Σᵢ cᵢαᵢ Πⱼ<ᵢ(1-αⱼ)',
+    innovations:['Explicit 3D Gaussian primitives (interpretable)','Real-time rendering: ~100 FPS at 1080p','Adaptive densification/pruning of Gaussians','Spherical harmonics for view-dependent color','Differentiable rasterizer (CUDA)','DiffGS: generative diffusion over Gaussians'],
+    stats:{params:'millions of Gaussians',train:'<30 min',fps:'100+ FPS'},
+    models:['3DGS','Mip-Splatting','GaussianAvatars','4DGaussians','DiffGS','GaussianObject'],
+    steps:['Multi-view Images (or text)','SfM Point Cloud Init','3D Gaussians','Differentiable Splatting','Compare with GT','Densify/Prune','Optimized Scene'],
+    nodes:[
+      {id:'imgs',label:'Multi-view\nImages\n(or text prompt)',type:'input',x:20,y:245,w:95,h:55},
+      {id:'sfm',label:'SfM / Random\nInit Point Cloud',type:'ffn',x:145,y:245,w:100,h:55,desc:'Structure-from-Motion initializes sparse 3D point cloud. Each point becomes a Gaussian. Optionally: random init for generative.'},
+      {id:'gauss',label:'3D Gaussians\n{μ, Σ, α, SH}',type:'latent',x:280,y:235,w:100,h:70,desc:'Each Gaussian: position μ, covariance Σ (3D ellipsoid shape), opacity α, spherical harmonic coefficients for view-dependent color.', formula:'G_i = {μᵢ, qᵢ, sᵢ, αᵢ, sh_iⱼ}'},
+      {id:'proj',label:'Project to\nCamera 2D\n(EWA splatting)',type:'ffn',x:415,y:180,w:100,h:55,desc:'Project 3D Gaussians to 2D Gaussian splats using perspective camera model.'},
+      {id:'sort',label:'Depth Sort\nGaussians',type:'norm',x:415,y:249,w:100,h:44},
+      {id:'raster',label:'Tile-based\nRasterizer\n(CUDA)',type:'ffn',x:415,y:306,w:100,h:55,desc:'Parallel CUDA rasterizer renders Gaussians per tile of pixels. Front-to-back alpha blending.'},
+      {id:'render',label:'Rendered\nImage',type:'latent',x:555,y:245,w:90,h:58},
+      {id:'loss',label:'Photometric +\nSSIM Loss',type:'special',x:555,y:330,w:90,h:50},
+      {id:'grad',label:'Gradient-based\nOptimization\n+ Densify/Prune',type:'merge',x:415,y:385,w:100,h:65,desc:'Adam optimizer updates all Gaussian params. Adaptive densification clones Gaussians in under-covered regions; pruning removes transparent/tiny ones.'},
+      {id:'out',label:'Final 3D\nGaussian Scene',type:'output',x:685,y:245,w:95,h:58},
+    ],
+    conns:[
+      {f:'imgs',t:'sfm'},{f:'sfm',t:'gauss'},{f:'gauss',t:'proj'},{f:'proj',t:'sort'},
+      {f:'sort',t:'raster'},{f:'raster',t:'render'},{f:'render',t:'loss'},
+      {f:'loss',t:'grad'},{f:'grad',t:'gauss',dash:true},{f:'render',t:'out',dash:true},
+    ],
+  },
+
+  'diffusion3d': {
+    id:'diffusion3d', name:'3D Diffusion (Triplane)', short:'Shap-E / LRM', cat:'3d',
+    year:'Jun & Nichol 2023 · Li et al. 2023',
+    desc:`3D diffusion models generate neural implicit representations from text or images. Shap-E encodes 3D objects into implicit function parameters (NeRF/mesh) via an encoder, then trains a diffusion model in that latent space. Large Reconstruction Model (LRM) uses a large transformer to directly predict a triplane NeRF from a single image in seconds.`,
+    formula:'Triplane: F(x) = interp(F_xy, F_xz, F_yz, x)\nDiffusion: z ~ p_θ(z|text)\nLRM: Triplane = Transformer(image_tokens)',
+    innovations:['Triplane representation: 3 orthogonal feature planes','Implicit function from triplane features','Diffusion over 3D latent parameters','Single-view to 3D in seconds (LRM)','Text-to-3D via diffusion in latent space','Score Distillation Sampling (SDS) alternative'],
+    stats:{params:'300M–1B',gen_time:'2–10s',format:'NeRF/mesh'},
+    models:['Shap-E','Point-E','LRM','CRM','InstantMesh','Wonder3D','Zero123++'],
+    steps:['Text/Image Input','Encode to 3D Latent','Diffusion (T→0)','Triplane Decoder','NeRF MLP','Volume Render','3D Output'],
+    nodes:[
+      {id:'txt',label:'Text or\nImage Input',type:'input',x:20,y:245,w:85,h:50},
+      {id:'enc',label:'3D Encoder\n(object→latent)',type:'embed',x:130,y:235,w:100,h:65,desc:'Encodes 3D object (point cloud/mesh/multi-view) into latent code z via transformer encoder.'},
+      {id:'z_noise',label:'Latent\nNoise z_T',type:'input',x:130,y:360,w:100,h:44},
+      {id:'diff',label:'Latent\nDiffusion\nModel',type:'attention',x:270,y:240,w:110,h:65,desc:'Denoising diffusion model in 3D latent space. Conditioned on CLIP text/image embedding.'},
+      {id:'triplane',label:'Triplane\nDecoder\nF_xy, F_xz, F_yz',type:'latent',x:420,y:240,w:110,h:65,desc:'3 orthogonal 2D feature planes. For any 3D point, project onto all 3 planes and sum features.', formula:'F(x) = MLP(F_xy(π(x))+F_xz(π(x))+F_yz(π(x)))'},
+      {id:'nerf_mlp',label:'NeRF\nMLP\n(c,σ)',type:'ffn',x:570,y:240,w:100,h:65},
+      {id:'render',label:'Volume\nRender /\nMarch Cubes',type:'merge',x:710,y:255,w:90,h:60},
+    ],
+    conns:[
+      {f:'txt',t:'enc'},{f:'enc',t:'diff'},{f:'z_noise',t:'diff'},{f:'diff',t:'triplane'},
+      {f:'triplane',t:'nerf_mlp'},{f:'nerf_mlp',t:'render'},
+    ],
+  },
+};
+
+// ══════════════════════════════════════════════════════════════
+// CATEGORIES
+// ══════════════════════════════════════════════════════════════
+const CATEGORIES = {
+  text: {
+    label:'Text Generation', emoji:'📝',
+    desc:'Autoregressive and sequence-to-sequence architectures for text',
+    archs:['gpt','enc-dec','bert','mamba'],
+    groups:[
+      {label:'Autoregressive', ids:['gpt']},
+      {label:'Seq-to-Seq', ids:['enc-dec']},
+      {label:'Bidirectional', ids:['bert']},
+      {label:'State Space', ids:['mamba']},
+    ]
+  },
+  multimodal: {
+    label:'Multimodal Text', emoji:'🖼️',
+    archs:['clip','llava'],
+    groups:[
+      {label:'Contrastive', ids:['clip']},
+      {label:'Vision-Language', ids:['llava']},
+    ]
+  },
+  omni: {
+    label:'Omni Models', emoji:'⚡',
+    archs:['omni'],
+    groups:[{label:'Any-to-Any', ids:['omni']}]
+  },
+  image: {
+    label:'Image Generation', emoji:'🎨',
+    archs:['ddpm','ldm','dit','gan','vae'],
+    groups:[
+      {label:'Diffusion (Pixel)', ids:['ddpm']},
+      {label:'Latent Diffusion', ids:['ldm']},
+      {label:'Flow Matching', ids:['dit']},
+      {label:'Adversarial', ids:['gan']},
+      {label:'Variational', ids:['vae']},
+    ]
+  },
+  video: {
+    label:'Video Generation', emoji:'🎬',
+    archs:['video-diff','video-pred'],
+    groups:[
+      {label:'DiT-based', ids:['video-diff']},
+      {label:'Autoregressive', ids:['video-pred']},
+    ]
+  },
+  audio: {
+    label:'Audio Generation', emoji:'🎵',
+    archs:['wavenet','audiolm','flow-audio'],
+    groups:[
+      {label:'Waveform', ids:['wavenet']},
+      {label:'Tokenized LM', ids:['audiolm']},
+      {label:'Flow Matching', ids:['flow-audio']},
+    ]
+  },
+  realtime: {
+    label:'Real-time Conv.', emoji:'🎤',
+    archs:['realtime','e2e-speech'],
+    groups:[
+      {label:'Omni Audio', ids:['realtime']},
+      {label:'TTS', ids:['e2e-speech']},
+    ]
+  },
+  '3d': {
+    label:'3D Generation', emoji:'🌐',
+    archs:['nerf','3dgs','diffusion3d'],
+    groups:[
+      {label:'Neural Fields', ids:['nerf']},
+      {label:'Gaussian Splatting', ids:['3dgs']},
+      {label:'Diffusion 3D', ids:['diffusion3d']},
+    ]
+  },
+};
+
+const DOT_COLORS = {
+  input:'#00d4ff', embed:'#22d3ee', attention:'#a855f7', ffn:'#f97316',
+  norm:'#fbbf24', output:'#4ade80', special:'#f87171', codec:'#22d3ee',
+  latent:'#e879f9', block:'#64748b', pool:'#7aa4c7', merge:'#63b3ed'
+};
+
+// ══════════════════════════════════════════════════════════════
+// RENDERER
+// ══════════════════════════════════════════════════════════════
+class ArchRenderer {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this.ctx = canvas.getContext('2d');
+    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.arch = null;
+    this.hovered = null;
+    this.playing = false;
+    this.stepIdx = -1;
+    this.particles = [];
+    this.animFrame = null;
+    this.activeNodes = new Set();
+    this.activeConns = new Set();
+    this.nodeMap = {};
+    this.VW = 820; this.VH = 540; // virtual coords
+    this.scale = 1; this.ox = 0; this.oy = 0;
+    this.resize();
+    this.bindEvents();
+    this.render();
+  }
+
+  resize() {
+    const r = this.canvas.parentElement.getBoundingClientRect();
+    this.W = r.width; this.H = r.height;
+    this.canvas.width = this.W * this.dpr;
+    this.canvas.height = this.H * this.dpr;
+    this.canvas.style.width = this.W + 'px';
+    this.canvas.style.height = this.H + 'px';
+    this.ctx.scale(this.dpr, this.dpr);
+    this.calcTransform();
+    this.render();
+  }
+
+  calcTransform() {
+    if (!this.arch) return;
+    const pad = 40;
+    const sx = (this.W - pad*2) / this.VW;
+    const sy = (this.H - pad*2) / this.VH;
+    this.scale = Math.min(sx, sy, 1.3);
+    this.ox = (this.W - this.VW * this.scale) / 2;
+    this.oy = (this.H - this.VH * this.scale) / 2;
+  }
+
+  setArch(arch) {
+    this.arch = arch;
+    this.hovered = null;
+    this.activeNodes = new Set();
+    this.activeConns = new Set();
+    this.particles = [];
+    this.stepIdx = -1;
+    this.nodeMap = {};
+    if (arch) arch.nodes.forEach(n => this.nodeMap[n.id] = n);
+    this.calcTransform();
+    this.render();
+  }
+
+  vx(x) { return this.ox + x * this.scale; }
+  vy(y) { return this.oy + y * this.scale; }
+  vs(s) { return s * this.scale; }
+
+  screenToVirtual(sx, sy) {
+    return { x: (sx - this.ox) / this.scale, y: (sy - this.oy) / this.scale };
+  }
+
+  hitTest(vx, vy) {
+    if (!this.arch) return null;
+    return this.arch.nodes.find(n =>
+      vx >= n.x - 4 && vx <= n.x + n.w + 4 &&
+      vy >= n.y - 4 && vy <= n.y + n.h + 4
+    );
+  }
+
+  bindEvents() {
+    this.canvas.addEventListener('mousemove', e => {
+      const r = this.canvas.getBoundingClientRect();
+      const { x, y } = this.screenToVirtual(e.clientX - r.left, e.clientY - r.top);
+      const hit = this.hitTest(x, y);
+      this.hovered = hit ? hit.id : null;
+      this.canvas.style.cursor = hit ? 'pointer' : 'default';
+      const tt = document.getElementById('nodeTooltip');
+      if (hit && hit.desc) {
+        document.getElementById('ttTitle').textContent = hit.label.replace('\n', ' ');
+        document.getElementById('ttDesc').textContent = hit.desc;
+        const tf = document.getElementById('ttFormula');
+        if (hit.formula) { tf.textContent = hit.formula; tf.style.display = 'block'; }
+        else tf.style.display = 'none';
+        const vx = this.vx(hit.x + hit.w + 10);
+        const vy = this.vy(hit.y);
+        const tx = Math.min(vx, this.W - 240);
+        tt.style.left = tx + 'px';
+        tt.style.top = Math.max(10, vy - 10) + 'px';
+        tt.style.display = 'block';
+        // Color title by type
+        const c = NODE_COLORS[hit.type];
+        document.getElementById('ttTitle').style.color = c ? c.text : '#e2e8f0';
+      } else {
+        tt.style.display = 'none';
+      }
+      this.render();
+    });
+    this.canvas.addEventListener('mouseleave', () => {
+      this.hovered = null;
+      document.getElementById('nodeTooltip').style.display = 'none';
+      this.render();
+    });
+  }
+
+  drawRoundRect(x, y, w, h, r) {
+    const ctx = this.ctx;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  drawNode(n) {
+    const ctx = this.ctx;
+    const c = NODE_COLORS[n.type] || NODE_COLORS.block;
+    const isHov = this.hovered === n.id;
+    const isActive = this.activeNodes.has(n.id);
+    const x = this.vx(n.x), y = this.vy(n.y);
+    const w = this.vs(n.w), h = this.vs(n.h);
+    const r = this.vs(8);
+
+    ctx.save();
+    if (isActive) {
+      ctx.shadowColor = c.stroke;
+      ctx.shadowBlur = 18;
+    }
+
+    this.drawRoundRect(x, y, w, h, r);
+    if (isHov) ctx.fillStyle = c.fill.replace(/[\d.]+\)$/, '0.22)');
+    else ctx.fillStyle = c.fill;
+    ctx.fill();
+
+    ctx.lineWidth = isActive ? 2 : (isHov ? 1.5 : 1);
+    ctx.strokeStyle = isActive ? c.stroke : (isHov ? c.stroke : c.stroke + '88');
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Label
+    const lines = n.label.split('\n');
+    const fontSize = Math.max(9, Math.min(13, this.vs(11.5)));
+    ctx.fillStyle = c.text;
+    ctx.font = `500 ${fontSize}px 'DM Sans', sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const lineH = fontSize * 1.4;
+    const startY = y + h/2 - (lines.length-1) * lineH/2;
+    lines.forEach((line, i) => {
+      ctx.fillText(line, x + w/2, startY + i * lineH);
+    });
+
+    // Sub-label
+    if (n.sub) {
+      ctx.font = `300 ${Math.max(8, fontSize-3)}px 'JetBrains Mono', monospace`;
+      ctx.fillStyle = c.text + '88';
+      ctx.fillText(n.sub, x + w/2, y + h - this.vs(8));
+    }
+
+    ctx.restore();
+  }
+
+  getNodeCenter(n) {
+    return { x: this.vx(n.x + n.w/2), y: this.vy(n.y + n.h/2) };
+  }
+
+  getNodeEdge(n, side) {
+    if (side === 'right') return { x: this.vx(n.x + n.w), y: this.vy(n.y + n.h/2) };
+    if (side === 'left')  return { x: this.vx(n.x),       y: this.vy(n.y + n.h/2) };
+    if (side === 'bottom')return { x: this.vx(n.x + n.w/2), y: this.vy(n.y + n.h) };
+    if (side === 'top')   return { x: this.vx(n.x + n.w/2), y: this.vy(n.y) };
+    return this.getNodeCenter(n);
+  }
+
+  bestEdges(a, b) {
+    const ac = this.getNodeCenter(a), bc = this.getNodeCenter(b);
+    const dx = bc.x - ac.x, dy = bc.y - ac.y;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      return [dx > 0 ? this.getNodeEdge(a,'right') : this.getNodeEdge(a,'left'),
+              dx > 0 ? this.getNodeEdge(b,'left')  : this.getNodeEdge(b,'right')];
+    } else {
+      return [dy > 0 ? this.getNodeEdge(a,'bottom') : this.getNodeEdge(a,'top'),
+              dy > 0 ? this.getNodeEdge(b,'top')    : this.getNodeEdge(b,'bottom')];
+    }
+  }
+
+  drawConn(conn, isActive) {
+    if (!this.arch) return;
+    const a = this.nodeMap[conn.f], b = this.nodeMap[conn.t];
+    if (!a || !b) return;
+    const ctx = this.ctx;
+    const [from, to] = this.bestEdges(a, b);
+    const dx = to.x - from.x, dy = to.y - from.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+
+    ctx.save();
+    ctx.strokeStyle = isActive ? '#00d4ff' : (conn.dash ? '#2d5580' : '#1e3a5f');
+    ctx.lineWidth = isActive ? 2 : 1;
+    if (conn.dash) ctx.setLineDash([4, 5]);
+    ctx.globalAlpha = isActive ? 1 : 0.7;
+
+    const cx1 = from.x + dx * 0.4;
+    const cy1 = from.y;
+    const cx2 = to.x - dx * 0.4;
+    const cy2 = to.y;
+
+    ctx.beginPath();
+    ctx.moveTo(from.x, from.y);
+    if (conn.style === 'cross') {
+      ctx.bezierCurveTo(from.x + this.vs(40), from.y, to.x - this.vs(40), to.y, to.x, to.y);
+    } else {
+      ctx.bezierCurveTo(cx1, cy1, cx2, cy2, to.x, to.y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Arrowhead
+    const ang = Math.atan2(to.y - cy2, to.x - cx2);
+    const as = this.vs(7);
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.globalAlpha = isActive ? 1 : 0.7;
+    ctx.beginPath();
+    ctx.moveTo(to.x, to.y);
+    ctx.lineTo(to.x - as*Math.cos(ang-0.4), to.y - as*Math.sin(ang-0.4));
+    ctx.lineTo(to.x - as*Math.cos(ang+0.4), to.y - as*Math.sin(ang+0.4));
+    ctx.fill();
+
+    // Label
+    if (conn.label && isActive) {
+      const mx = (from.x + to.x)/2, my = (from.y + to.y)/2;
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = `${this.vs(9)}px 'JetBrains Mono', monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(conn.label, mx, my - this.vs(8));
+    }
+
+    ctx.restore();
+  }
+
+  spawnParticle(fromNode, toNode) {
+    const [from, to] = this.bestEdges(fromNode, toNode);
+    this.particles.push({ fx:from.x, fy:from.y, tx:to.x, ty:to.y, t:0, speed: 0.015 + Math.random()*0.01 });
+  }
+
+  drawParticle(p) {
+    const ctx = this.ctx;
+    const t = p.t;
+    const x = p.fx + (p.tx - p.fx) * t;
+    const y = p.fy + (p.ty - p.fy) * t;
+    const grad = ctx.createRadialGradient(x, y, 0, x, y, this.vs(6));
+    grad.addColorStop(0, 'rgba(0,212,255,0.9)');
+    grad.addColorStop(1, 'rgba(0,212,255,0)');
+    ctx.beginPath();
+    ctx.arc(x, y, this.vs(5), 0, Math.PI*2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+
+  render() {
+    const ctx = this.ctx;
+    ctx.clearRect(0, 0, this.W, this.H);
+    if (!this.arch) {
+      ctx.fillStyle = '#334d63';
+      ctx.font = "14px 'DM Sans', sans-serif";
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Select an architecture', this.W/2, this.H/2);
+      return;
+    }
+    // Draw connections
+    this.arch.conns.forEach(c => this.drawConn(c, this.activeConns.has(c.f+'>'+c.t)));
+    // Draw nodes
+    this.arch.nodes.forEach(n => this.drawNode(n));
+    // Draw particles
+    this.particles.forEach(p => this.drawParticle(p));
+    // Draw bracket for repeated block
+    if (this.arch.nodes.some(n => n.label.includes('×N') || n.label.includes('×n'))) {
+      this.drawRepeatBracket();
+    }
+  }
+
+  drawRepeatBracket() {
+    const ns = this.arch.nodes.filter(n => n.label.includes('×N') || n.label.includes('×n') || (n.id.includes('ln') || n.id.includes('mha') || n.id.includes('ffn') || n.id.includes('add')));
+    if (ns.length < 2) return;
+    const minX = Math.min(...ns.map(n=>n.x));
+    const maxX = Math.max(...ns.map(n=>n.x+n.w));
+    const minY = Math.min(...ns.map(n=>n.y));
+    const maxY = Math.max(...ns.map(n=>n.y+n.h));
+    const ctx = this.ctx;
+    const pad = this.vs(12);
+    const x1 = this.vx(minX) - pad, y1 = this.vy(minY) - pad;
+    const x2 = this.vx(maxX) + pad, y2 = this.vy(maxY) + pad;
+    ctx.save();
+    ctx.strokeStyle = '#234466';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([6,4]);
+    ctx.strokeRect(x1, y1, x2-x1, y2-y1);
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(0,212,255,0.55)';
+    ctx.font = `${this.vs(10)}px 'JetBrains Mono', monospace`;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillText('×N layers', x2 - this.vs(4), y1 + this.vs(4));
+    ctx.restore();
+  }
+
+  stepForward() {
+    if (!this.arch || !this.arch.steps) return;
+    this.stepIdx = (this.stepIdx + 1) % this.arch.steps.length;
+    const step = this.arch.steps[this.stepIdx];
+    document.getElementById('stepName').textContent = step;
+    // Highlight relevant nodes and connections
+    this.activeNodes = new Set();
+    this.activeConns = new Set();
+    const frac = this.stepIdx / this.arch.steps.length;
+    const nodesPerStep = Math.ceil(this.arch.nodes.length / this.arch.steps.length);
+    const startN = this.stepIdx * nodesPerStep;
+    for (let i = startN; i < Math.min(startN + nodesPerStep, this.arch.nodes.length); i++) {
+      this.activeNodes.add(this.arch.nodes[i].id);
+    }
+    // Also spawn particles on active connections
+    if (this.stepIdx > 0) {
+      const prevNode = this.arch.nodes[Math.max(0, startN-1)];
+      const currNode = this.arch.nodes[startN];
+      if (prevNode && currNode) {
+        this.arch.conns.forEach(c => {
+          if (c.f === prevNode.id) {
+            this.activeConns.add(c.f+'>'+c.t);
+            const b = this.nodeMap[c.t];
+            if (b) this.spawnParticle(prevNode, b);
+          }
+        });
+      }
+    }
+    this.render();
+  }
+
+  startAnimation() {
+    this.playing = true;
+    const tick = () => {
+      if (!this.playing) return;
+      // Update particles
+      this.particles = this.particles.filter(p => { p.t += p.speed; return p.t < 1.05; });
+      this.render();
+      this.animFrame = requestAnimationFrame(tick);
+    };
+    this.animFrame = requestAnimationFrame(tick);
+    // Step through at intervals
+    this._stepTimer = setInterval(() => {
+      if (!this.playing) { clearInterval(this._stepTimer); return; }
+      this.stepForward();
+    }, 1200);
+  }
+
+  stopAnimation() {
+    this.playing = false;
+    if (this.animFrame) cancelAnimationFrame(this.animFrame);
+    if (this._stepTimer) clearInterval(this._stepTimer);
+    this.particles = [];
+    this.render();
+  }
+
+  reset() {
+    this.stopAnimation();
+    this.activeNodes = new Set();
+    this.activeConns = new Set();
+    this.stepIdx = -1;
+    document.getElementById('stepName').textContent = 'Ready';
+    this.render();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// HERO BACKGROUND
+// ══════════════════════════════════════════════════════════════
+function initHeroBg() {
+  const c = document.getElementById('bgCanvas');
+  const ctx = c.getContext('2d');
+  let W, H, nodes, edges;
+
+  function setup() {
+    W = c.offsetWidth; H = c.offsetHeight;
+    c.width = W * 2; c.height = H * 2;
+    c.style.width = W + 'px'; c.style.height = H + 'px';
+    ctx.scale(2, 2);
+    nodes = Array.from({length: 40}, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      vx: (Math.random()-.5)*.4, vy: (Math.random()-.5)*.4,
+      r: Math.random()*2+1,
+      color: Math.random() < .5 ? '#00d4ff' : '#a855f7'
+    }));
+    edges = [];
+    for (let i = 0; i < nodes.length; i++)
+      for (let j = i+1; j < nodes.length; j++) {
+        const d = Math.hypot(nodes[i].x-nodes[j].x, nodes[i].y-nodes[j].y);
+        if (d < 120) edges.push([i,j,d]);
+      }
+  }
+
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+    edges.forEach(([i,j,d]) => {
+      const a = nodes[i], b = nodes[j];
+      const dist = Math.hypot(a.x-b.x, a.y-b.y);
+      const alpha = (1 - dist/150) * 0.3;
+      if (alpha <= 0) return;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.strokeStyle = `rgba(0,212,255,${alpha})`;
+      ctx.lineWidth = .5;
+      ctx.stroke();
+    });
+    nodes.forEach(n => {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+      ctx.fillStyle = n.color + 'cc';
+      ctx.fill();
+      n.x += n.vx; n.y += n.vy;
+      if (n.x < 0 || n.x > W) n.vx *= -1;
+      if (n.y < 0 || n.y > H) n.vy *= -1;
+    });
+    requestAnimationFrame(draw);
+  }
+
+  setup();
+  draw();
+  window.addEventListener('resize', setup);
+}
+
+// ══════════════════════════════════════════════════════════════
+// UI STATE
+// ══════════════════════════════════════════════════════════════
+let currentCat = 'text';
+let currentArchId = 'gpt';
+let renderer;
+
+function renderSidebar() {
+  const cat = CATEGORIES[currentCat];
+  document.getElementById('sbCatName').textContent = cat.label;
+  const list = document.getElementById('archList');
+  list.innerHTML = '';
+  cat.groups.forEach(g => {
+    const sec = document.createElement('div');
+    sec.className = 'sb-section';
+    sec.innerHTML = `<div class="sb-section-label">${g.label}</div>`;
+    g.ids.forEach(id => {
+      const a = ARCHS[id];
+      if (!a) return;
+      const item = document.createElement('div');
+      item.className = 'arch-item' + (id === currentArchId ? ' active' : '');
+      item.innerHTML = `
+        <div class="arch-dot" style="background:${DOT_COLORS[a.nodes[0]?.type]||'#64748b'}"></div>
+        <div class="arch-info">
+          <div class="arch-name">${a.name}</div>
+          <div class="arch-sub">${a.short}</div>
+        </div>
+        ${a.badge==='new'?'<span class="arch-tag new">NEW</span>':a.badge==='SOTA'?'<span class="arch-tag sota">SOTA</span>':''}
+      `;
+      item.addEventListener('click', () => selectArch(id));
+      sec.appendChild(item);
+    });
+    list.appendChild(sec);
+  });
+}
+
+function renderDetail(a) {
+  document.getElementById('dpCat').textContent = CATEGORIES[currentCat].label.toUpperCase();
+  document.getElementById('dpName').textContent = a.name;
+  document.getElementById('dpYear').textContent = a.year;
+  // Badges
+  const badges = document.getElementById('dpBadges');
+  const badgeStyles = {
+    'Autoregressive':'background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);color:#00d4ff',
+    'SOTA':'background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.3);color:#f97316',
+    'New':'background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.3);color:#4ade80',
+    'new':'background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.3);color:#4ade80',
+  };
+  badges.innerHTML = '';
+  [a.badge, CATEGORIES[currentCat].label].filter(Boolean).forEach(b => {
+    const s = badgeStyles[b] || 'background:rgba(255,255,255,.05);border:1px solid #1a3349;color:#64748b';
+    badges.innerHTML += `<span class="dp-badge" style="${s};border-radius:3px;font-family:var(--ff-mono);font-size:9px;padding:2px 8px">${b}</span>`;
+  });
+
+  const body = document.getElementById('dpBody');
+  // Stats
+  const statsHTML = a.stats ? `
+    <div class="dp-section">
+      <div class="dp-section-title">Specs</div>
+      <div class="stats-grid">
+        ${Object.entries(a.stats).map(([k,v])=>`<div class="stat-card"><div class="stat-val">${v}</div><div class="stat-lbl">${k}</div></div>`).join('')}
+      </div>
+    </div>` : '';
+
+  // Description
+  const descHTML = `
+    <div class="dp-section">
+      <div class="dp-section-title">Overview</div>
+      <div class="dp-desc">${a.desc}</div>
+    </div>`;
+
+  // Formula
+  const formulaHTML = a.formula ? `
+    <div class="dp-section">
+      <div class="dp-section-title">Mathematics</div>
+      <div class="formula-block">${a.formula.split('\n').join('<br>')}</div>
+    </div>` : '';
+
+  // Innovations
+  const innoHTML = a.innovations ? `
+    <div class="dp-section">
+      <div class="dp-section-title">Key Innovations</div>
+      <ul class="inno-list">
+        ${a.innovations.map(i=>`<li><span class="inno-icon">◆</span>${i}</li>`).join('')}
+      </ul>
+    </div>` : '';
+
+  // Models
+  const modelsHTML = a.models ? `
+    <div class="dp-section">
+      <div class="dp-section-title">Notable Models</div>
+      <div class="models-list">
+        ${a.models.map(m=>`<span class="model-chip${m===a.highlight?' highlight':''}">${m}</span>`).join('')}
+      </div>
+    </div>` : '';
+
+  // Demo
+  let demoHTML = '';
+  if (a.demo === 'text') {
+    demoHTML = `
+      <div class="dp-section">
+        <div class="dp-section-title">Live Demo — API Generation</div>
+        <div class="demo-area">
+          <div class="demo-label">Enter prompt → see autoregressive generation</div>
+          <div class="demo-input-row">
+            <input class="demo-input" id="demoPrompt" type="text" value="${a.demoPrompt||'The future of AI is'}" placeholder="Enter prompt..."/>
+            <button class="demo-btn" id="demoBtn" onclick="runTextDemo()">▶ Run</button>
+          </div>
+          <div class="demo-output"><div class="demo-tokens" id="demoTokens"></div></div>
+        </div>
+      </div>`;
+  } else if (a.demo === 'diffusion') {
+    demoHTML = `
+      <div class="dp-section">
+        <div class="dp-section-title">Diffusion Steps Demo</div>
+        <div class="demo-area">
+          <canvas id="diffCanvas" class="diff-canvas" width="260" height="80"></canvas>
+          <div class="diff-steps" id="diffSteps"></div>
+          <button class="demo-btn" style="margin-top:8px" onclick="animateDiffusion()">▶ Animate Denoising</button>
+        </div>
+      </div>`;
+    setTimeout(initDiffusionDemo, 100);
+  }
+
+  body.innerHTML = statsHTML + descHTML + formulaHTML + innoHTML + modelsHTML + demoHTML;
+}
+
+function selectArch(id) {
+  currentArchId = id;
+  const a = ARCHS[id];
+  if (!a) return;
+  renderer.reset();
+  renderer.setArch(a);
+  renderSidebar();
+  renderDetail(a);
+  renderLegend(a);
+}
+
+function renderLegend(a) {
+  const usedTypes = new Set(a.nodes.map(n => n.type));
+  const leg = document.getElementById('canvasLegend');
+  leg.innerHTML = '';
+  usedTypes.forEach(t => {
+    const c = NODE_COLORS[t];
+    if (!c) return;
+    leg.innerHTML += `<div class="legend-item"><div class="legend-dot" style="background:${c.stroke}"></div>${c.label}</div>`;
+  });
+}
+
+function togglePlay() {
+  const btn = document.getElementById('playBtn');
+  if (renderer.playing) {
+    renderer.stopAnimation();
+    btn.textContent = '▶ Animate';
+    btn.classList.remove('active');
+  } else {
+    renderer.startAnimation();
+    btn.textContent = '⏸ Pause';
+    btn.classList.add('active');
+  }
+}
+
+function resetAnim() {
+  renderer.reset();
+  const btn = document.getElementById('playBtn');
+  btn.textContent = '▶ Animate';
+  btn.classList.remove('active');
+}
+
+// ══════════════════════════════════════════════════════════════
+// LIVE TEXT DEMO
+// ══════════════════════════════════════════════════════════════
+async function runTextDemo() {
+  const prompt = document.getElementById('demoPrompt')?.value || '';
+  const btn = document.getElementById('demoBtn');
+  const container = document.getElementById('demoTokens');
+  if (!btn || !container) return;
+  btn.disabled = true;
+  btn.textContent = '⏳';
+  container.innerHTML = '';
+
+  // Show context tokens
+  const contextWords = prompt.trim().split(/\s+/);
+  contextWords.forEach(w => {
+    const span = document.createElement('span');
+    span.className = 'token context';
+    span.textContent = w;
+    container.appendChild(span);
+  });
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 80,
+        stream: true,
+        system: 'You are demonstrating transformer text generation. Continue the given text naturally in 1-2 sentences. Be concise.',
+        messages: [{ role: 'user', content: `Continue this text: "${prompt}"` }]
+      })
+    });
+
+    if (!resp.ok) throw new Error('API error');
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let wordBuffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') break;
+        try {
+          const ev = JSON.parse(data);
+          const text = ev?.delta?.text || '';
+          if (!text) continue;
+          wordBuffer += text;
+          // Split on spaces and show tokens
+          while (wordBuffer.includes(' ')) {
+            const idx = wordBuffer.indexOf(' ');
+            const word = wordBuffer.slice(0, idx);
+            wordBuffer = wordBuffer.slice(idx + 1);
+            if (word.trim()) showToken(word, container);
+          }
+        } catch(e) {}
+      }
+    }
+    if (wordBuffer.trim()) showToken(wordBuffer, container);
+  } catch(err) {
+    // Fallback: simulate
+    const words = ['are','emerging','at','an','unprecedented','pace,','transforming','how','we','build','intelligent','systems.'];
+    for (const w of words) {
+      await new Promise(r => setTimeout(r, 180 + Math.random()*120));
+      showToken(w, container);
+    }
+  }
+
+  btn.disabled = false;
+  btn.textContent = '▶ Run';
+}
+
+function showToken(word, container) {
+  const prev = container.querySelector('.current');
+  if (prev) { prev.classList.remove('current'); prev.classList.add('generated'); }
+  const span = document.createElement('span');
+  span.className = 'token current';
+  span.textContent = word;
+  container.appendChild(span);
+  container.scrollTop = container.scrollHeight;
+}
+
+// ══════════════════════════════════════════════════════════════
+// DIFFUSION DEMO
+// ══════════════════════════════════════════════════════════════
+let diffStep = 0;
+const DIFF_STEPS_N = 10;
+
+function initDiffusionDemo() {
+  const c = document.getElementById('diffCanvas');
+  if (!c) return;
+  const stepsEl = document.getElementById('diffSteps');
+  stepsEl.innerHTML = '';
+  for (let i = 0; i < DIFF_STEPS_N; i++) {
+    const d = document.createElement('div');
+    d.className = 'diff-step-dot';
+    d.textContent = `T${DIFF_STEPS_N-i}`;
+    d.dataset.step = i;
+    d.addEventListener('click', () => { diffStep = i; drawDiffStep(); });
+    stepsEl.appendChild(d);
+    if (i < DIFF_STEPS_N-1) stepsEl.innerHTML += '<span class="diff-arrow">→</span>';
+  }
+  drawDiffStep();
+}
+
+function drawDiffStep() {
+  const c = document.getElementById('diffCanvas');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  ctx.clearRect(0, 0, W, H);
+  const noiseLevel = 1 - diffStep / (DIFF_STEPS_N - 1);
+  // Draw a simple image with noise overlay
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, `rgba(0,${Math.floor(100*(1-noiseLevel))},${Math.floor(200*(1-noiseLevel))},1)`);
+  grad.addColorStop(1, `rgba(${Math.floor(150*(1-noiseLevel))},0,${Math.floor(255*(1-noiseLevel))},1)`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+  // Noise overlay
+  const imgData = ctx.getImageData(0, 0, W, H);
+  for (let i = 0; i < imgData.data.length; i += 4) {
+    const n = (Math.random() - 0.5) * 255 * noiseLevel;
+    imgData.data[i]   = Math.max(0, Math.min(255, imgData.data[i]   + n));
+    imgData.data[i+1] = Math.max(0, Math.min(255, imgData.data[i+1] + n));
+    imgData.data[i+2] = Math.max(0, Math.min(255, imgData.data[i+2] + n));
+  }
+  ctx.putImageData(imgData, 0, 0);
+  // Label
+  ctx.fillStyle = 'rgba(255,255,255,0.8)';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'center';
+  ctx.fillText(`t=${DIFF_STEPS_N - diffStep}  noise=${(noiseLevel*100).toFixed(0)}%`, W/2, H-6);
+  // Update dots
+  document.querySelectorAll('.diff-step-dot').forEach((d, i) => {
+    d.className = 'diff-step-dot' + (i === diffStep ? ' active' : i < diffStep ? ' done' : '');
+  });
+}
+
+async function animateDiffusion() {
+  diffStep = 0;
+  for (let i = 0; i < DIFF_STEPS_N; i++) {
+    diffStep = i;
+    drawDiffStep();
+    await new Promise(r => setTimeout(r, 280));
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  initHeroBg();
+  renderer = new ArchRenderer(document.getElementById('archCanvas'));
+
+  // Category nav
+  document.getElementById('catNav').addEventListener('click', e => {
+    const btn = e.target.closest('.cat-btn');
+    if (!btn) return;
+    const cat = btn.dataset.cat;
+    if (cat === currentCat) return;
+    currentCat = cat;
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+    currentArchId = CATEGORIES[cat].archs[0];
+    renderSidebar();
+    selectArch(currentArchId);
+  });
+
+  // Resize
+  window.addEventListener('resize', () => { renderer.resize(); });
+
+  // Initial render
+  renderSidebar();
+  selectArch(currentArchId);
+});
+</script>
+</body>
+</html>
